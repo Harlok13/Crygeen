@@ -74,6 +74,8 @@ class Button:
         self.surf: Surface = self.__get_surface()
         self.rect: Rect = self.__get_rect()
 
+        self.index = kwargs['index']  # TODO doc new field
+
     def __get_surface(self) -> Surface:
         """
         Create text surface and set start alpha value.
@@ -155,8 +157,14 @@ class Menu:
         self._display_surface: Surface = pg.display.get_surface()
         self._screen_size: tuple[int, int] = self._display_surface.get_size()
 
-        self.buttons_list = []
+        # buttons setup
+        self.buttons_list: list = []
+        self._dest_positions: list = []
         self.__create_menu_buttons()
+
+        # dropdown menu effect
+        self.animation_time = 2000
+        self.start_time: int = 0  # get value, when first change state
 
         # screensaver setup
         self.screensaver_active: bool = True
@@ -316,9 +324,9 @@ class Menu:
         """
         x: int = settings.MAIN_MENU_X
         y, y_offset = settings.MAIN_MENU_Y, settings.MAIN_MENU_Y_OFFSET
-
-        for row in self._main_menu_list:
-            y += y_offset
+        dest_pos_y = y
+        for index, title in enumerate(self._main_menu_list):
+            dest_pos_y += y_offset
             button: Button = Button(
                 title=title,
                 x=x,
@@ -329,7 +337,9 @@ class Menu:
                 position=self.main_menu_position,
                 opacity_offset=self.opacity_offset,
                 alpha=self.alpha,
+                index=index
             )
+            self._dest_positions.append(dest_pos_y)
             self.buttons_list.append(button)
 
     # in dev
