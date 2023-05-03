@@ -178,7 +178,7 @@ class Menu:
 
         # main theme setup
         self._music: bool = False
-        self._main_sound: Sound = self.__set_menu_music()
+        # self._main_sound: Sound = self.__set_menu_music()
 
         # settings section setup
 
@@ -362,14 +362,20 @@ class Menu:
             self._dest_positions.append(dest_pos_y)
             self.buttons_list.append(button)
 
-    # in dev
-    def start_menu_animation(self) -> None:
+    def dropdown_menu_effect(self) -> None:
         """
-        Play animation, when...
+        Play animation, when open menu.
+        self.animation_time: The duration of the animation.
+        delta: The time elapsed since the function was called.
         :return:
         """
-        for button in self.buttons_list:
-            ...
+        if self.animation_time > 0:
+            delta: int = pg.time.get_ticks() - self.start_time
+            for button in self.buttons_list:
+                if delta < self.animation_time:
+                    button.rect.y = self.__lerp(
+                        button.rect.y, self._dest_positions[button.index], delta / self.animation_time
+                    )
 
     @deprecated
     def __text_effects(self) -> None:
