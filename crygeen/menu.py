@@ -230,6 +230,27 @@ class Menu:
                 self._fade_surface.set_alpha(self.fading_alpha)
                 self._display_surface.blit(self._fade_surface, (0, 0))
 
+    @staticmethod
+    def __lerp(a: float, b: float, t: float) -> float:
+        """
+        Linear interpolation formula for smooth button movement.
+        The formula is used to smoothly change the 'x' or 'y' coordinate
+        of each button using the start and end value of the coordinates and
+        modify this value based on the time 't' elapsed since the start of
+        the move.
+        :param a: The starting value.
+        :param b: The ending value.
+        :param t: The interpolation factor, ranging from 0 to 1.
+        :return: The interpolated value between a and b based on the factor 't'.
+        """
+        return a + (b - a) * t
+
+    # TODO docs
+    @staticmethod
+    def __add_text_effect(obj: Surface):
+        item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
+        obj.set_alpha(item_alpha)
+
     def __draw_text(self, text: str, font: Font, surface: Surface, x: int, y: int) -> tuple[Rect, Surface]:
         """
         Draw a text on the screen.
@@ -243,8 +264,7 @@ class Menu:
         text_obj: Surface = font.render(text, True, self.main_menu_font_color)
         text_rect: Rect = text_obj.get_rect()
         text_rect.center = (x, y)
-        item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
-        text_obj.set_alpha(item_alpha)
+        self.__add_text_effect(text_obj)
         surface.blit(text_obj, text_rect)
 
         return text_rect, text_obj  # rudiment, refactor
