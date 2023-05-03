@@ -15,7 +15,7 @@ from crygeen.support import import_folder, deprecated
 
 
 class ButtonModel(BaseModel):
-    text: str
+    title: str
     x: int
     y: int
     font_name: str
@@ -57,7 +57,7 @@ class Button:
                     :param kwargs:
                     """
         button_data = ButtonModel(**kwargs)
-        self.text: str = button_data.text
+        self.title: str = button_data.title
         self.x: int = button_data.x
         self.y: int = button_data.y
         self.font_name: str = button_data.font_name
@@ -80,7 +80,7 @@ class Button:
         :return:
         """
         text_surf: Surface = self.font.render(
-            self.text, True, self.font_color
+            self.title, True, self.font_color
         )
         text_surf.set_alpha(self.default_alpha)
         return text_surf
@@ -272,10 +272,10 @@ class Menu:
         """
         screensaver_data: list[Surface] = import_folder(settings.SCREENSAVER_PATH)
 
-        screensaver_data: list[Surface] = [pg.transform.scale(item, self._screen_size) for item in
-                                           screensaver_data]
+        screensaver_scale_data: list[Surface] = [pg.transform.scale(item, self._screen_size) for item in
+                                                 screensaver_data]
 
-        return screensaver_data
+        return screensaver_scale_data
 
     def __start_screensaver(self, state: 'State') -> None:
         """
@@ -320,7 +320,7 @@ class Menu:
         for row in self._main_menu_list:
             y += y_offset
             button: Button = Button(
-                text=row,
+                title=title,
                 x=x,
                 y=y,
                 font_name=self.main_menu_font_name,
