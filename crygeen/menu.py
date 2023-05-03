@@ -145,7 +145,6 @@ class Button:
 class Menu:
     def __init__(self) -> None:
         # general setup
-        # self.main_menu_font: Font = pg.font.Font(settings.MAIN_MENU_FONT, settings.MAIN_MENU_FONT_SIZE)
         self.main_menu_font_name: str = settings.MAIN_MENU_FONT
         self.main_menu_font_size: int = settings.MAIN_MENU_FONT_SIZE
         self.main_menu_font_color: tuple[int, int, int] = settings.MAIN_MENU_FONT_COLOR
@@ -178,7 +177,7 @@ class Menu:
 
         # main theme setup
         self._music: bool = False
-        # self._main_sound: Sound = self.__set_menu_music()
+        self._main_sound: Sound = self.__set_menu_music()
 
         # settings section setup
 
