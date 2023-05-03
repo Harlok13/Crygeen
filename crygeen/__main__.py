@@ -37,7 +37,7 @@ class Game:
         :return:
         """
         if self.state == State.MAIN_MENU:
-            self.menu.start_menu_animation()
+            self.menu.dropdown_menu_effect()
             for button in self.menu.buttons_list:
                 if button.rect.collidepoint(pygame.mouse.get_pos()):
                     button.fade_in_hover()
@@ -59,6 +59,8 @@ class Game:
                 exit()
             if event.type == pygame.KEYDOWN and self.state == State.SCREENSAVER:
                 self.state = State.MAIN_MENU
+                # start dropdown menu effect
+                self.menu.start_time = pygame.time.get_ticks()
 
     def run(self):
         while True:
