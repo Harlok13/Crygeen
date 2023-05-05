@@ -1,79 +1,100 @@
-import pygame
-from pygame import QUIT, KEYDOWN, KEYUP, Surface
+import pygame as pg
+from pygame import QUIT, KEYDOWN, KEYUP, Surface, MOUSEBUTTONDOWN
 from pygame.time import Clock
 
 from crygeen import audio
+from crygeen.controls import ControlsHandler
 from crygeen.menu import Menu, State
 
 from crygeen.settings import settings
+from crygeen.states import Status
+from crygeen.util import load_save, reset_keys
 
 
 class Game:
     def __init__(self):
         # general setup
-        pygame.mixer.pre_init(*audio.MIXER_SETTINGS)
-        pygame.init()
-        self.screen: Surface = pygame.display.set_mode(
+        pg.mixer.pre_init(*audio.MIXER_SETTINGS)
+        pg.init()
+        # self.canvas: Surface = pg.Surface((settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2))
+        self.screen: Surface = pg.display.set_mode(
             (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT),
             settings.FLAGS,
             settings.BIT_PER_PIXEL
         )
-        pygame.display.set_caption(settings.GAME_TITLE)
+        pg.display.set_caption(settings.GAME_TITLE)
+        self.clock: Clock = pg.time.Clock()
 
-        self.clock: Clock = pygame.time.Clock()
-        self.state = State.SCREENSAVER
+        self.status = Status.SCREENSAVER
+        self.state = State.MAIN_MENU
+        # self.state = State.START_GAME
 
         self.menu: Menu = Menu()
+        self.menu.toggle_music(True)
 
-        pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP])
+        self.control_data_path: str = settings.CONTROL_DATA_PATH
 
-    def __display_menu_buttons(self):
-        """
-        Displays menu buttons on the screen based on the application state.
-        If the application state is 'State.MAIN_MENU', the method starts the menu
-        animation and displays all menu buttons. If the mouse is hovering
-        over a button, it "fades in" using the 'fade_in_hover' method,
-        otherwise it returns to its original value.
-        :return:
-        """
-        if self.state == State.MAIN_MENU:
-            self.menu.dropdown_menu_effect()
-            for button in self.menu.buttons_list:
-                if button.rect.collidepoint(pygame.mouse.get_pos()):
-                    button.fade_in_hover()
-                else:
-                    if button.alpha > button.default_alpha:
-                        button.alpha -= button.opacity_offset
-                        button.surf.set_alpha(button.alpha)
-                self.screen.blit(button.surf, button.rect)
+        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN])
 
     def __event_loop(self):
         """
         Main pygame event loop. Toggle states.
         :return:
         """
-        for event in pygame.event.get():
+        for event in pg.event.get():
             # TODO create event data (dict)
-            if event.type == pygame.QUIT:
-                pygame.quit()
+            if event.type == pg.QUIT:
+                pg.quit()
                 exit()
-            if event.type == pygame.KEYDOWN and self.state == State.SCREENSAVER:
-                self.state = State.MAIN_MENU
+
+            # drop screensaver
+            elif event.type == pg.KEYDOWN and self.status == Status.SCREENSAVER:
+                self.status = Status.MAIN_MENU
                 # start dropdown menu effect
-                self.menu.start_time = pygame.time.get_ticks()
+                self.menu.dropdown_start_time = pg.time.get_ticks()
+
+            # exit status
+            elif event.type == pg.KEYDOWN and self.status == Status.EXIT:
+                if event.key == pg.K_RETURN:
+                    pg.quit()
+                    exit()
+                elif event.key == pg.K_ESCAPE:
+                    self.status = Status.MAIN_MENU
+                    self.menu.dropdown_start_time = pg.time.get_ticks()
+
+            elif event.type == pg.MOUSEBUTTONDOWN:
+
+                if self.state == State.MAIN_MENU:
+                    for button in self.menu.buttons_list:
+                        if button.rect.collidepoint(pg.mouse.get_pos()):
+                            self.status = button.input()
+                            if self.status == Status.EXIT:
+                                self.menu.exit_dropdown_start_time = pg.time.get_ticks()  # TODO change title
+                            elif self.status == Status.SETTINGS:
+                                self.menu.settings_dropdown_start_time = pg.time.get_ticks()
+
+                if self.status == Status.EXIT:
+                    for button in self.menu.exit_buttons_list:
+                        if button.rect.collidepoint(pg.mouse.get_pos()):
+                            self.status = button.input()
+                            if self.status == Status.MAIN_MENU:
+                                self.menu.dropdown_start_time = pg.time.get_ticks()
 
     def run(self):
         while True:
-            dt: float = self.clock.tick(settings.FPS) / 1000
+
             self.__event_loop()
-
             # set menu
-            self.menu.display(self.state, dt)
-            self.menu.toggle_music(True)
-            self.__display_menu_buttons()
+            if self.state == State.MAIN_MENU:
+                self.menu.run(self.status)
 
-            pygame.display.update()
+            if self.status == Status.NEW_GAME:
+                self.state = State.GAME
+            if self.state == State.GAME:
+                self.screen.fill('blue')
 
+            # self.screen.blit(pg.transform.scale(self.canvas, self.screen.get_size()), (0, 0))
+            pg.display.update()
             self.clock.tick(settings.FPS)
 
 
