@@ -1,18 +1,65 @@
+from pathlib import Path
+from typing import Optional
+
 import pygame as pg
 from pygame import QUIT, KEYDOWN, KEYUP, Surface, MOUSEBUTTONDOWN
 from pygame.time import Clock
 
 from crygeen import audio
-from crygeen.controls import ControlsHandler
-from crygeen.menu import Menu, State
+from crygeen.menu import Menu
 
 from crygeen.settings import settings
-from crygeen.states import Status
-from crygeen.util import load_save, reset_keys
+from crygeen.states import Status, State
+
+
+class EventHandler:
+    def __init__(self) -> None:
+        self.game: Optional[Game] = None
+
+    @staticmethod
+    def __close_game():
+        pg.quit()
+        exit()
+
+    def event_loop(self):
+        for event in pg.event.get():
+
+            match event.type:
+                case pg.QUIT:
+                    self.__close_game()
+
+                case pg.KEYDOWN:
+                    if self.game.status == Status.EXIT:
+                        self.game.status = self.game.menu.exit_button_action(event.key)
+                    if self.game.status == Status.SCREENSAVER:
+                        self.game.status = Status.MAIN_MENU
+                        self.game.menu.dropdown_start_time = pg.time.get_ticks()
+                    if self.game.status == Status.SETTINGS:
+                        self.game.menu.dropdown_start_time = pg.time.get_ticks()
+
+                case pg.MOUSEBUTTONDOWN:  # TODO bag with scroll on buttons (fix)
+                    if self.game.status == Status.SETTINGS:
+                        self.game.menu.scroll_menu(event.button)
+
+                    if self.game.state == State.MAIN_MENU:
+                        for button in self.game.menu.menu_buttons_list:
+                            if button.rect.collidepoint(pg.mouse.get_pos()):
+                                self.game.status = button.input()
+                                if self.game.status == Status.EXIT:
+                                    self.game.menu.exit_dropdown_start_time = pg.time.get_ticks()
+                                elif self.game.status == Status.SETTINGS:
+                                    self.game.menu.settings_dropdown_start_time = pg.time.get_ticks()
+
+                    if self.game.status == Status.EXIT:
+                        for button in self.game.menu.exit_buttons_list:
+                            if button.rect.collidepoint(pg.mouse.get_pos()):
+                                self.game.status = button.input()
+                                if self.game.status == Status.MAIN_MENU:
+                                    self.game.menu.dropdown_start_time = pg.time.get_ticks()
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, handler: EventHandler) -> None:
         # general setup
         pg.mixer.pre_init(*audio.MIXER_SETTINGS)
         pg.init()
@@ -27,77 +74,37 @@ class Game:
 
         self.status = Status.SCREENSAVER
         self.state = State.MAIN_MENU
-        # self.state = State.START_GAME
 
         self.menu: Menu = Menu()
         self.menu.toggle_music(True)
 
-        self.control_data_path: str = settings.CONTROL_DATA_PATH
+        self.event_handler: Optional[EventHandler] = handler
+        self.event_handler.game = self
 
-        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN])
+        self.control_data_path: Path = settings.CONTROL_DATA_PATH
 
-    def __event_loop(self):
-        """
-        Main pygame event loop. Toggle states.
-        :return:
-        """
-        for event in pg.event.get():
-            # TODO create event data (dict)
-            if event.type == pg.QUIT:
-                pg.quit()
-                exit()
-
-            # drop screensaver
-            elif event.type == pg.KEYDOWN and self.status == Status.SCREENSAVER:
-                self.status = Status.MAIN_MENU
-                # start dropdown menu effect
-                self.menu.dropdown_start_time = pg.time.get_ticks()
-
-            # exit status
-            elif event.type == pg.KEYDOWN and self.status == Status.EXIT:
-                if event.key == pg.K_RETURN:
-                    pg.quit()
-                    exit()
-                elif event.key == pg.K_ESCAPE:
-                    self.status = Status.MAIN_MENU
-                    self.menu.dropdown_start_time = pg.time.get_ticks()
-
-            elif event.type == pg.MOUSEBUTTONDOWN:
-
-                if self.state == State.MAIN_MENU:
-                    for button in self.menu.buttons_list:
-                        if button.rect.collidepoint(pg.mouse.get_pos()):
-                            self.status = button.input()
-                            if self.status == Status.EXIT:
-                                self.menu.exit_dropdown_start_time = pg.time.get_ticks()  # TODO change title
-                            elif self.status == Status.SETTINGS:
-                                self.menu.settings_dropdown_start_time = pg.time.get_ticks()
-
-                if self.status == Status.EXIT:
-                    for button in self.menu.exit_buttons_list:
-                        if button.rect.collidepoint(pg.mouse.get_pos()):
-                            self.status = button.input()
-                            if self.status == Status.MAIN_MENU:
-                                self.menu.dropdown_start_time = pg.time.get_ticks()
+        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, pg.MOUSEWHEEL])
 
     def run(self):
         while True:
 
-            self.__event_loop()
-            # set menu
-            if self.state == State.MAIN_MENU:
-                self.menu.run(self.status)
+            match self.state:
+                case State.MAIN_MENU:
+                    self.menu.run(self.status)
+                case State.GAME:
+                    self.screen.fill('blue')
 
-            if self.status == Status.NEW_GAME:
-                self.state = State.GAME
-            if self.state == State.GAME:
-                self.screen.fill('blue')
+            match self.status:
+                case Status.NEW_GAME:
+                    self.state = State.GAME
 
-            # self.screen.blit(pg.transform.scale(self.canvas, self.screen.get_size()), (0, 0))
+            self.event_handler.event_loop()
+
             pg.display.update()
-            self.clock.tick(settings.FPS)
+            self.clock.tick(settings.MENU_FPS)
 
 
 if __name__ == "__main__":
-    game = Game()
+    event_handler: EventHandler = EventHandler()
+    game: Game = Game(event_handler)
     game.run()
