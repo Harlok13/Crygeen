@@ -88,10 +88,28 @@ class Button:
         text_surf: Surface = self.font.render(
             title, True, self.font_color
         )
-        text_surf.set_alpha(self.default_alpha)
         return text_surf
 
-    def __get_rect(self) -> Rect:
+    def set_scroll_opacity(self):  # todo ref all
+        height: int = settings.SCREEN_HEIGHT
+        boundary: int = height // 4
+        start_y: int = 0 + boundary  # 100
+        end_y: int = height - boundary  # 700
+        half: int = height // 2
+        y_percent: float = (half - start_y) / 100
+
+        start_alpha: int = 200
+        boundary_alpha: int = 50
+        delta_alpha: int = start_alpha - boundary_alpha  # 100
+        alpha_percent: float = 3  # delta_alpha / 100  # 1.5
+
+        current_pos: int = abs(half - self.rect.y)
+        current_alpha: float = current_pos * y_percent / alpha_percent
+
+        if boundary_alpha <= current_alpha <= start_alpha:
+            self.surf.set_alpha(operator.sub(start_alpha, current_alpha))
+
+    def set_rect(self, position) -> Rect:
         """
         Create rect depending on position.
         :return:
