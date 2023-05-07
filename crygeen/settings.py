@@ -8,8 +8,6 @@ from crygeen.controls import control, Control
 from crygeen.states import State, Status
 
 
-# TODO make the coordinates depend on the screen size
-# TODO make font size dependent on screen size
 class Settings(BaseSettings):
     # general setup _________________________________________________________________________________
     SCREEN_WIDTH: int = 1280
@@ -32,18 +30,10 @@ class Settings(BaseSettings):
 
     # main menu setup _______________________________________________________________________________
     MAIN_MENU_LIST: dict = {
-        'New Game': {
-            'status': Status.NEW_GAME
-        },
-        'Load game': {
-            'status': Status.LOAD_GAME
-        },
-        'Settings': {
-            'status': Status.SETTINGS
-        },
-        'Exit': {
-            'status': Status.EXIT,
-        }
+        'New Game': {'status': Status.NEW_GAME},
+        'Load game': {'status': Status.LOAD_GAME},
+        'Settings': {'status': Status.SETTINGS},
+        'Exit': {'status': Status.EXIT}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
@@ -57,8 +47,7 @@ class Settings(BaseSettings):
     MAIN_MENU_FONT_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
 
     # screensaver setup _____________________________________________________________________________
-    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
-    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'main')  # test mode
+    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
     SCREENSAVER_ALPHA_OFFSET: float = .5
     SCREENSAVER_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     SCREENSAVER_FONT_SIZE: int = 45
@@ -73,16 +62,8 @@ class Settings(BaseSettings):
     SCREENSAVER_START_TEXT_ALPHA: Tuple[int, int] = (0, 255)
 
     # exit setup ____________________________________________________________________________________
-    EXIT_LIST: dict = {
-        'No':
-            {
-                'status': Status.MAIN_MENU
-            },
-        'Yes':
-            {
-                'action': 'pg.quit(); exit()'
-            }
-    }
+    EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU},
+                      'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_Y: int = 500
     EXIT_BUTTON_X: tuple[int, int] = (SCREEN_WIDTH // 2 - 200, SCREEN_WIDTH // 2 + 200)
     EXIT_BUTTON_POSITION: str = 'center'
