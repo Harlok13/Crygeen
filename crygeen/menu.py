@@ -1,25 +1,27 @@
 import math
 import operator
 import random
-from time import sleep
+from pathlib import Path
 from typing import Optional, Callable
 
 import pygame as pg
+import pygame.freetype
 from pygame import Surface, Rect
 from pygame.font import Font
 from pygame.mixer import Sound
 
 from crygeen import audio
-from crygeen.buttons import Button
+from crygeen.buttons import Button, LinkedList
+from crygeen.controls import Key
 from crygeen.settings import settings
-from crygeen.states import State, Status
-from crygeen.support import import_folder, deprecated
+from crygeen.states import Status
+from crygeen.support import import_folder_img
 
 
 class Menu:
     def __init__(self) -> None:
         # general setup _____________________________________________________________________________
-        self._display_surface: Surface = pg.display.get_surface()  # TODO deprecated
+        self._display_surface: Surface = pg.display.get_surface()
         self._screen_size: tuple[int, int] = self._display_surface.get_size()
 
         # menu setup ________________________________________________________________________________
@@ -29,29 +31,43 @@ class Menu:
         self.main_menu_position: str = settings.MAIN_MENU_POSITION
         self._main_menu_list = settings.MAIN_MENU_LIST
         self.alpha: int = settings.MAIN_MENU_ALPHA
-        self.opacity_offset: float = settings.MAIN_MENU_OPACITY_OFFSET  # TODO deprecated?
+        self.button_opacity_offset: float = settings.MAIN_MENU_BUTTON_OPACITY_OFFSET
 
         # menu buttons setup
-        self.buttons_list: list = []
+        self.menu_buttons_list: list = []
         self._menu_y_dest_positions: list = []
         self.__create_menu_buttons()
 
         # dropdown menu effect
-        self.animation_time = 2000  # TODO reloc to settings
-        self.dropdown_start_time: int = 0  # get value, when change state  # TODO fix to status?
+        self.dropdown_animation_time = settings.MAIN_MENU_DROPDOWN_ANIMATION
+        self.dropdown_start_time: int = 0
 
         # screensaver setup _________________________________________________________________________
         self.screensaver_active: bool = True
+
         # opacity effect
         self._screensaver_flag: bool = False
-        self._screensaver_start_time: int = 0  # get value, when first start
+        self.screensaver_fade_surf = pg.Surface(self._screen_size)
+        self.screensaver_fade_surf.set_alpha(255)
+        self._screensaver_dropdown_start_time: int = 0
         self._screensaver_alpha_vanish_duration: int = settings.SCREENSAVER_ALPHA_VANISH_DURATION
+        self._screensaver_start_alpha_vanish: int = settings.SCREENSAVER_START_ALPHA_VANISH
+        # text opacity effect
+        self._screensaver_alpha_text_duration: int = settings.SCREENSAVER_ALPHA_TEXT_DURATION
+        self._screensaver_start_text_alpha: tuple[int, int] = settings.SCREENSAVER_START_TEXT_ALPHA
 
+        # screensaver bg
+        self._screensaver_path: Path = settings.SCREENSAVER_PATH
         self._screensaver_data: list[Surface] = self.__load_screensaver_data()
         self._count_frames: int = len(self._screensaver_data)
         self._screensaver_frame_idx: int = 0
+
+        # screensaver text
+        self._screensaver_text: str = settings.SCREENSAVER_TEXT
         self._screensaver_font_size: int = settings.SCREENSAVER_FONT_SIZE
         self._screensaver_font: Font = pg.font.Font(settings.SCREENSAVER_FONT, self._screensaver_font_size)
+        self._screensaver_text_x: int = self._screen_size[0] // 2 or settings.SCREENSAVER_TEXT_X
+        self._screensaver_text_y: int = settings.SCREENSAVER_TEXT_Y
 
         # main theme setup __________________________________________________________________________
         self._music: bool = False
@@ -60,24 +76,36 @@ class Menu:
         # exit section setup ________________________________________________________________________
         self.exit_buttons_list: list = []
         self._exit_list: list = settings.EXIT_LIST
-        self.exit_dropdown_start_time: int = 0  # get value, when status = exit
-        self._exit_width: int = self._screen_size[0] // 2
-        self._exit_height: int = self._screen_size[1] // 2
+        self.exit_dropdown_start_time: int = 0
 
         # exit buttons
-        self.__create_exit_buttons()  # TODO reloc
+        self._exit_button_x: tuple[int, int] = settings.EXIT_BUTTON_X
+        self._exit_button_y: int = settings.EXIT_BUTTON_Y
+        self._exit_button_position: str = settings.EXIT_BUTTON_POSITION
+        self.__create_exit_buttons()
 
         # garbage ___________________________________________________________________________________
         self.img = pg.image.load('setting_bg6.jpeg').convert_alpha()
 
         # settings section __________________________________________________________________________
+        self.linked_list: LinkedList = LinkedList()
         self.control_list: dict = settings.CONTROL
         self._control_buttons_list: list = []
         self._control_y_dest_positions: list = []
+        self._control_buttons_position: str = settings.CONTROL_BUTTONS_POSITION
+        self._control_bottom_boundary: int = settings.CONTROL_BOTTOM_BOUNDARY
+        self._control_top_boundary: int = settings.CONTROL_TOP_BOUNDARY
+        self._control_scroll_offset: int = settings.CONTROL_SCROLL_OFFSET
 
+        # control buttons
         self.__create_settings_buttons()
-        self.settings_dropdown_start_time = 0
-        self.settings_alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
+
+        # settings effects
+        self.settings_fade_surf = pg.Surface(self._screen_size)
+        self.settings_fade_surf.set_alpha(0)
+        self.settings_dropdown_start_time: int = 0
+        self._settings_alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
+        self._settings_dest_alpha_vanish: int = settings.SETTINGS_DEST_ALPHA_VANISH
 
     # settings section ______________________________________________________________________________
     def __create_settings_buttons(self) -> None:  # TODO remove code duplications
@@ -85,17 +113,18 @@ class Menu:
         x: int = settings.CONTROL_X
         y, y_offset = settings.CONTROL_Y, settings.CONTROL_Y_OFFSET
         dest_pos_y = y
-        for index, title in enumerate(self.control_list):
+        for index, key in enumerate(self.control_list):
+            key: Key
             dest_pos_y += y_offset
             button: Button = Button(
-                title=title,
+                title=f'{key.title:<50} {key.key:>10}',
                 x=x,
                 y=y,
                 font_name=self.main_menu_font_name,
                 font_size=settings.CONTROL_FONT_SIZE,
                 font_color=self.main_menu_font_color,
-                position=self.main_menu_position,
-                opacity_offset=self.opacity_offset,
+                position=self._control_buttons_position,
+                opacity_offset=self.button_opacity_offset,
                 alpha=self.alpha,
                 index=index,
                 properties=''
@@ -114,10 +143,9 @@ class Menu:
             self._display_surface.blit(button.surf, button.rect)
 
     # exit section __________________________________________________________________________________
-    def __create_exit_buttons(self) -> None:  # todo ref all!
-        y: int = settings.EXIT_BUTTON_Y
-        x_coords: tuple[int, int] = settings.EXIT_BUTTON_X
-        position: str = settings.EXIT_BUTTON_POSITION
+    def __create_exit_buttons(self) -> None:
+        y: int = self._exit_button_y
+        x_coords: tuple[int, int] = self._exit_button_x
         for index, title in enumerate(self._exit_list):
             button: Button = Button(
                 title=title,
@@ -126,8 +154,8 @@ class Menu:
                 font_name=self.main_menu_font_name,
                 font_size=self.main_menu_font_size,
                 font_color=self.main_menu_font_color,
-                position=position,
-                opacity_offset=self.opacity_offset,
+                position=self._exit_button_position,
+                opacity_offset=self.button_opacity_offset,
                 alpha=self.alpha,
                 index=index,
                 properties=self._exit_list[title]
@@ -139,6 +167,8 @@ class Menu:
         rect = self.img.get_rect()
         self.img.set_alpha(128)
         self._display_surface.blit(self.img, rect)
+        ########################
+
         for button in self.exit_buttons_list:
             button.fade_in_hover()
             self._display_surface.blit(button.surf, button.rect)
@@ -181,15 +211,15 @@ class Menu:
             start_time: int,
             animation_time: int,
             y_dest_positions: list[int],
-            reverse_opacity: bool = False
+            shading: bool = False
     ) -> None:
         """
         Play animation, when open menu.
-        self.animation_time: The duration of the animation.
+        self.dropdown_animation_time: The duration of the animation.
         delta: The time elapsed since the function was called.
-        :return:  # TODO refactor doc and reloc to support func
+        :return:
         """
-        opacity_values = (self.alpha, 0) if reverse_opacity else (0, self.alpha)
+        opacity_values = (self.alpha, 0) if shading else (0, self.alpha)
         if animation_time > 0:
             delta: int = pg.time.get_ticks() - start_time
             for button in buttons_list:
@@ -201,15 +231,17 @@ class Menu:
                         *opacity_values, delta / animation_time
                     ))
 
-    def __draw_text(  # TODO ref all
+    def __draw_text(
             self,
             text: str,
-            font: Font,
+            font: pygame.freetype.Font | Font,
             surface: Surface,
             x: int,
             y: int,
             emergence: bool = False,
-            text_effect: bool = False,
+            alpha_values: Optional[tuple[int, int]] = None,
+            emergence_duration: Optional[int] = None,
+            text_effect: bool = False
     ) -> tuple[Rect, Surface]:
         """
         Draw a text on the screen.
@@ -225,21 +257,21 @@ class Menu:
         text_obj: Surface = font.render(text, True, self.main_menu_font_color)
         text_rect: Rect = text_obj.get_rect()
         text_rect.center = (x, y)
-        if emergence:  # TODO ref hard code
-            delta = pg.time.get_ticks() - self._screensaver_start_time
-            x: float | int = self.__lerp(
-                0, 255, delta / 7000
+        if emergence:
+            delta: int = pg.time.get_ticks() - self._screensaver_dropdown_start_time
+            alpha_offset: float | int = self.__lerp(
+                *alpha_values, delta / emergence_duration
             )
 
-            if x < 200:
-                text_obj.set_alpha(x)
+            if alpha_offset < 200:  # todo ?
+                text_obj.set_alpha(alpha_offset)
             else:
                 if text_effect:
                     self.__add_text_effect(text_obj)
 
         surface.blit(text_obj, text_rect)
 
-        return text_rect, text_obj  # rudiment, refactor
+        return text_rect, text_obj
 
     @staticmethod
     def __lerp(a: float, b: float, t: float) -> float | int:
@@ -289,10 +321,10 @@ class Menu:
         Create list of screensaver surfaces and optimize size according to screen size.
         :return: List of surfaces needed for animation.
         """
-        screensaver_data: list[Surface] = import_folder(settings.SCREENSAVER_PATH)
+        screensaver_data: list[Surface] = import_folder_img(self._screensaver_path)
 
-        screensaver_scale_data: list[Surface] = [pg.transform.scale(item, self._screen_size) for item in
-                                                 screensaver_data]
+        screensaver_scale_data: list[Surface] = [pg.transform.scale(item, (1280, 800)) for item in
+                                                 screensaver_data]  # TODO ref hard code
 
         return screensaver_scale_data
 
@@ -302,23 +334,27 @@ class Menu:
         :return:
         """
         if not self._screensaver_flag:  # get time for lerp and start animation
-            self._screensaver_start_time: int = pg.time.get_ticks()
+            self._screensaver_dropdown_start_time: int = pg.time.get_ticks()
             self._screensaver_flag: bool = True
         self._screensaver_frame_idx: int = (self._screensaver_frame_idx + 1) % self._count_frames
 
         self._display_surface.blit(self._screensaver_data[self._screensaver_frame_idx], (0, 0))
 
-        self.__alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_start_time, 255, 0,
-                            self.screensaver_fade_surf)  # TODO ref hard code
+        self.__alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_dropdown_start_time,
+                            self._screensaver_start_alpha_vanish, 0, self.screensaver_fade_surf)
 
         if status == Status.SCREENSAVER:
             self.__draw_text(
-                'Press any key to continue...',
-                self._screensaver_font,
-                self._display_surface,
-                self._screen_size[0] // 2,
-                600,
+
+                text=self._screensaver_text,
+                font=self._screensaver_font,
+                surface=self._display_surface,
+                x=self._screensaver_text_x,
+                y=self._screensaver_text_y,
                 text_effect=True,
+                alpha_values=self._screensaver_start_text_alpha,
+                emergence_duration=self._screensaver_alpha_text_duration,
+
                 emergence=True
             )
 
@@ -342,18 +378,18 @@ class Menu:
                 font_size=self.main_menu_font_size,
                 font_color=self.main_menu_font_color,
                 position=self.main_menu_position,
-                opacity_offset=self.opacity_offset,
+                opacity_offset=self.button_opacity_offset,
                 alpha=self.alpha,
                 index=index,
                 properties=self._main_menu_list[title]
             )
             self._menu_y_dest_positions.append(dest_pos_y)
-            self.buttons_list.append(button)
+            self.menu_buttons_list.append(button)
 
     def __display_menu_buttons(self, status: Status):
         """
         Displays menu buttons on the screen based on the application state.
-        If the application state is 'State.MAIN_MENU', the method starts the menu
+        If the application status is 'Status.MAIN_MENU', the method starts the menu
         animation and displays all menu buttons. If the mouse is hovering
         over a button, it "fades in" using the 'fade_in_hover' method,
         otherwise it returns to its original value.
@@ -361,21 +397,23 @@ class Menu:
         """
         if status == status.MAIN_MENU:
             self.__dropdown_menu_effect(
-                self.buttons_list, self.dropdown_start_time, self.animation_time, self._menu_y_dest_positions
+                self.menu_buttons_list, self.dropdown_start_time, self.dropdown_animation_time,
+                self._menu_y_dest_positions
             )
         if status != status.MAIN_MENU:
             self.__dropdown_menu_effect(
-                self.buttons_list, self.exit_dropdown_start_time, self.animation_time, [1000, 1000, 1000, 1000], True
-            )
+                self.menu_buttons_list, self.exit_dropdown_start_time, self.dropdown_animation_time,
+                [1000] * len(self.menu_buttons_list), True
+            )  # TODO ref hard code
 
         if status != Status.SETTINGS:  # TODO fix don't work correctly
             print('da')
             self.__dropdown_menu_effect(self._control_buttons_list, self.settings_dropdown_start_time,
-                                        self.animation_time, [1000] * len(self._control_buttons_list), True)
+                                        self.dropdown_animation_time, [1000] * len(self._control_buttons_list), True)
             # for button in self._control_buttons_list:
             #     self._display_surface.blit(button.surf, button.rect)
 
-        for button in self.buttons_list:
+        for button in self.menu_buttons_list:
             button.fade_in_hover()
 
             self._display_surface.blit(button.surf, button.rect)
@@ -392,5 +430,5 @@ class Menu:
             self.__display_menu_buttons(status)
         if status == Status.EXIT:
             self.__display_exit_menu()
-        if status == Status.SETTINGS:
+        elif status == Status.SETTINGS:
             self.__display_settings_menu(status)
