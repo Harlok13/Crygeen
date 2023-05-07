@@ -129,13 +129,26 @@ class Menu:
                 index=index,
                 properties=''
             )
+            self.linked_list.append(button)
             self._control_y_dest_positions.append(dest_pos_y)
             self._control_buttons_list.append(button)
 
-    def __display_settings_menu(self, status) -> None:
-        self.__alpha_vanish(1000, self.settings_dropdown_start_time, 0, 128, self.settings_fade_surf)  # TODO ref
-        self.__dropdown_menu_effect(self._control_buttons_list, self.settings_dropdown_start_time, self.animation_time,
-                                    self._control_y_dest_positions)
+    def scroll_menu(self, key: int) -> None:  # todo doc
+        match key:
+            case pg.SYSTEM_CURSOR_WAITARROW:
+                if self.linked_list.head.button.rect.y <= self._control_bottom_boundary:
+                    self.linked_list.set_y_offset(self._control_scroll_offset)
+
+            case pg.SYSTEM_CURSOR_SIZENWSE:
+                if self.linked_list.tail.button.rect.y >= self._control_top_boundary:
+                    self.linked_list.set_y_offset(-self._control_scroll_offset)
+
+    def __display_settings_menu(self, status) -> None:  # todo doc
+        self.__alpha_vanish(self._settings_alpha_vanish_duration, self.settings_dropdown_start_time, 0,
+                            self._settings_dest_alpha_vanish, self.settings_fade_surf)
+
+        self.__dropdown_menu_effect(self._control_buttons_list, self.settings_dropdown_start_time,
+                                    self.dropdown_animation_time, self._control_y_dest_positions)
 
         for button in self._control_buttons_list:
             button.fade_in_hover()
