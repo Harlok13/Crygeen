@@ -1,4 +1,3 @@
-import asyncio
 import math
 import operator
 import random
@@ -22,13 +21,6 @@ class Menu:
         # general setup _____________________________________________________________________________
         self._display_surface: Surface = pg.display.get_surface()  # TODO deprecated
         self._screen_size: tuple[int, int] = self._display_surface.get_size()
-
-        # TODO ref
-        self.screensaver_fade_surf = pg.Surface(self._screen_size)
-        self.screensaver_fade_surf.set_alpha(255)
-
-        self.settings_fade_surf = pg.Surface(self._screen_size)
-        self.settings_fade_surf.set_alpha(0)
 
         # menu setup ________________________________________________________________________________
         self.main_menu_font_name: str = settings.MAIN_MENU_FONT
@@ -77,8 +69,6 @@ class Menu:
 
         # garbage ___________________________________________________________________________________
         self.img = pg.image.load('setting_bg6.jpeg').convert_alpha()
-        pg.transform.scale(self.img, (200, 200))
-        print(self.img.get_size())
 
         # settings section __________________________________________________________________________
         self.control_list: dict = settings.CONTROL
@@ -119,7 +109,6 @@ class Menu:
                                     self._control_y_dest_positions)
 
         for button in self._control_buttons_list:
-            button: Button
             button.fade_in_hover()
 
             self._display_surface.blit(button.surf, button.rect)
@@ -143,17 +132,12 @@ class Menu:
                 index=index,
                 properties=self._exit_list[title]
             )
-            print(button.title, button.properties)
             self.exit_buttons_list.append(button)
 
     def __display_exit_menu(self) -> None:
         ###### del block######
         rect = self.img.get_rect()
         self.img.set_alpha(128)
-
-        pg.transform.scale(self.img, (200, 200))
-        ######################
-
         self._display_surface.blit(self.img, rect)
         for button in self.exit_buttons_list:
             button.fade_in_hover()
@@ -271,7 +255,6 @@ class Menu:
         """
         return a + (b - a) * t
 
-    # TODO docs and ref hard code
     @staticmethod
     def __add_text_effect(obj: Surface):
         item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
@@ -328,7 +311,6 @@ class Menu:
         self.__alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_start_time, 255, 0,
                             self.screensaver_fade_surf)  # TODO ref hard code
 
-        # TODO ref hard code
         if status == Status.SCREENSAVER:
             self.__draw_text(
                 'Press any key to continue...',
@@ -405,7 +387,6 @@ class Menu:
         :param status: Current status.
         :return:
         """
-
         self.__start_screensaver(status)
         if status != Status.SCREENSAVER:
             self.__display_menu_buttons(status)
@@ -413,4 +394,3 @@ class Menu:
             self.__display_exit_menu()
         if status == Status.SETTINGS:
             self.__display_settings_menu(status)
-
