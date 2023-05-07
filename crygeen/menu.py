@@ -1,256 +1,270 @@
 import math
+import operator
 import random
-from enum import Enum
+from pathlib import Path
 from typing import Optional, Callable
 
 import pygame as pg
-from pydantic import BaseModel, validator
+import pygame.freetype
 from pygame import Surface, Rect
 from pygame.font import Font
 from pygame.mixer import Sound
 
 from crygeen import audio
+from crygeen.buttons import Button, LinkedList
+from crygeen.controls import Key
 from crygeen.settings import settings
-from crygeen.support import import_folder, deprecated
-
-
-class ButtonModel(BaseModel):
-    title: str
-    x: int
-    y: int
-    font_name: str
-    font_size: int
-    font_color: str | tuple = settings.STD_BUTTON_COLOR,
-    position: str = 'topleft'
-    alpha: int = 200
-    opacity_offset: float = 1
-    width: Optional[int] = None
-    height: Optional[int] = None
-    action: Optional[Callable] = None
-
-    @validator('position')
-    def check_position(cls, v):
-        allowed_positions = {'center', 'topleft', 'topright', 'bottomleft', 'bottomright'}
-        if v not in allowed_positions:
-            raise ValueError(f'Position must be one of {", ".join(allowed_positions)}')
-        return v
-
-
-class Button:
-
-    def __init__(self, **kwargs) -> None:
-        """
-        Initialize a button.
-                    :param text: The text content of the button.
-                    :param x: The x-coordinate of the button.
-                    :param y: The y-coordinate of the button.
-                    :param font_name: The font used for the button text.
-                    :param font_size: The font size used for the button text.
-                    :param font_color: The color of the button text.
-                    :param position: can only take a value from this list: topleft,
-                                     topright, center, bottomleft, bottomright
-                    :param alpha: The start amount of the button alpha.
-                    :param opacity_offset: The amount by which the alpha value changes on hover.
-                    :param width: The width of the button surface (default is None).
-                    :param height: The height of the button surface (default is None).
-                    :param action: The function to be called when the button is clicked.
-                    :param kwargs:
-                    """
-        button_data = ButtonModel(**kwargs)
-        self.title: str = button_data.title
-        self.x: int = button_data.x
-        self.y: int = button_data.y
-        self.font_name: str = button_data.font_name
-        self.font_size: int = button_data.font_size
-        self.font_color: str | tuple = button_data.font_color
-        self.font: Font = self.__get_font(self.font_name, self.font_size)
-        self.position: str = button_data.position
-        self.alpha: int = button_data.alpha
-        self.default_alpha: int = self.alpha
-        self.opacity_offset: float = button_data.opacity_offset
-        self.width: Optional[int] = button_data.width
-        self.height: Optional[int] = button_data.height
-        self.__action = button_data.action
-        self.surf: Surface = self.__get_surface()
-        self.rect: Rect = self.__get_rect()
-
-        self.index = kwargs['index']  # TODO doc new field
-
-    def __get_surface(self) -> Surface:
-        """
-        Create text surface and set start alpha value.
-        :return:
-        """
-        text_surf: Surface = self.font.render(
-            self.title, True, self.font_color
-        )
-        text_surf.set_alpha(self.default_alpha)
-        return text_surf
-
-    def __get_rect(self) -> Rect:
-        """
-        Create rect depending on position.
-        :return:
-        """
-        if self.position == 'topleft':
-            return self.surf.get_rect(topleft=(self.x, self.y))
-        elif self.position == 'center':
-            return self.surf.get_rect(center=(self.x, self.y))
-        elif self.position == 'bottomleft':
-            return self.surf.get_rect(bottomleft=(self.x, self.y))
-        elif self.position == 'bottomright':
-            return self.surf.get_rect(bottomright=(self.x, self.y))
-        elif self.position == 'topright':
-            return self.surf.get_rect(topright=(self.x, self.y))
-
-    @staticmethod
-    def __get_font(font_name: str, font_size: int) -> Font:
-        """Setup font."""
-        return pg.font.Font(font_name, font_size)
-
-    def __is_selected(self) -> bool:
-        """
-        Notifies if the button is selected.
-        :return: boolean
-        """
-        # mb im add keyboard also
-        return self.rect.collidepoint(pg.mouse.get_pos())
-
-    # TODO fix this
-    def fade_in_hover(self) -> None:
-        """
-        Fade in the button on hover. The selected button gradually
-        becomes brighter.
-        :return:
-        """
-        if self.__is_selected():
-            if self.alpha < 255:
-                self.alpha += self.opacity_offset
-                self.surf.set_alpha(self.alpha)
-
-        else:
-            if self.alpha > self.default_alpha:
-                self.alpha -= self.opacity_offset
-                self.surf.set_alpha(self.alpha)
-
-    @deprecated
-    def run(self):
-        """
-        Run in main loop.
-        :return:
-        """
-        self.fade_in_hover()
+from crygeen.states import Status
+from crygeen.support import import_folder_img
 
 
 class Menu:
     def __init__(self) -> None:
-        # general setup
+        # general setup _____________________________________________________________________________
+        self._display_surface: Surface = pg.display.get_surface()
+        self._screen_size: tuple[int, int] = self._display_surface.get_size()
+
+        # menu setup ________________________________________________________________________________
         self.main_menu_font_name: str = settings.MAIN_MENU_FONT
         self.main_menu_font_size: int = settings.MAIN_MENU_FONT_SIZE
         self.main_menu_font_color: tuple[int, int, int] = settings.MAIN_MENU_FONT_COLOR
         self.main_menu_position: str = settings.MAIN_MENU_POSITION
         self._main_menu_list = settings.MAIN_MENU_LIST
-        self._menu_surfaces: list[Surface] = []  # TODO del?
-        self.opacity_offset: float = settings.MAIN_MENU_OPACITY_OFFSET
         self.alpha: int = settings.MAIN_MENU_ALPHA
-        self._display_surface: Surface = pg.display.get_surface()
-        self._screen_size: tuple[int, int] = self._display_surface.get_size()
+        self.button_opacity_offset: float = settings.MAIN_MENU_BUTTON_OPACITY_OFFSET
 
-        # buttons setup
-        self.buttons_list: list = []
-        self._dest_positions: list = []
+        # menu buttons setup
+        self.menu_buttons_list: list = []
+        self._menu_y_dest_positions: list = []
         self.__create_menu_buttons()
 
         # dropdown menu effect
-        self.animation_time = 2000
-        self.start_time: int = 0  # get value, when first change state
+        self.dropdown_animation_time = settings.MAIN_MENU_DROPDOWN_ANIMATION
+        self.dropdown_start_time: int = 0
 
-        # screensaver setup
+        # screensaver setup _________________________________________________________________________
         self.screensaver_active: bool = True
+
+        # opacity effect
+        self._screensaver_flag: bool = False
+        self.screensaver_fade_surf = pg.Surface(self._screen_size)
+        self.screensaver_fade_surf.set_alpha(255)
+        self._screensaver_dropdown_start_time: int = 0
+        self._screensaver_alpha_vanish_duration: int = settings.SCREENSAVER_ALPHA_VANISH_DURATION
+        self._screensaver_start_alpha_vanish: int = settings.SCREENSAVER_START_ALPHA_VANISH
+        # text opacity effect
+        self._screensaver_alpha_text_duration: int = settings.SCREENSAVER_ALPHA_TEXT_DURATION
+        self._screensaver_start_text_alpha: tuple[int, int] = settings.SCREENSAVER_START_TEXT_ALPHA
+
+        # screensaver bg
+        self._screensaver_path: Path = settings.SCREENSAVER_PATH
         self._screensaver_data: list[Surface] = self.__load_screensaver_data()
         self._count_frames: int = len(self._screensaver_data)
-        self._screensaver_idx: int = 0
+        self._screensaver_frame_idx: int = 0
+
+        # screensaver text
+        self._screensaver_text: str = settings.SCREENSAVER_TEXT
         self._screensaver_font_size: int = settings.SCREENSAVER_FONT_SIZE
         self._screensaver_font: Font = pg.font.Font(settings.SCREENSAVER_FONT, self._screensaver_font_size)
-        self.shading_alpha: float = 255
-        self.fading_alpha: float = 0
+        self._screensaver_text_x: int = self._screen_size[0] // 2 or settings.SCREENSAVER_TEXT_X
+        self._screensaver_text_y: int = settings.SCREENSAVER_TEXT_Y
 
-        # main theme setup
+        # main theme setup __________________________________________________________________________
         self._music: bool = False
         self._main_sound: Sound = self.__set_menu_music()
 
-        # settings section setup
+        # exit section setup ________________________________________________________________________
+        self.exit_buttons_list: list = []
+        self._exit_list: list = settings.EXIT_LIST
+        self.exit_dropdown_start_time: int = 0
+
+        # exit buttons
+        self._exit_button_x: tuple[int, int] = settings.EXIT_BUTTON_X
+        self._exit_button_y: int = settings.EXIT_BUTTON_Y
+        self._exit_button_position: str = settings.EXIT_BUTTON_POSITION
+        self.__create_exit_buttons()
+
+        # garbage ___________________________________________________________________________________
+        self.img = pg.image.load('setting_bg6.jpeg').convert_alpha()
+
+        # settings section __________________________________________________________________________
+        self.linked_list: LinkedList = LinkedList()
+        self.control_list: dict = settings.CONTROL
+        self._control_buttons_list: list = []
+        self._control_y_dest_positions: list = []
+        self._control_buttons_position: str = settings.CONTROL_BUTTONS_POSITION
+        self._control_bottom_boundary: int = settings.CONTROL_BOTTOM_BOUNDARY
+        self._control_top_boundary: int = settings.CONTROL_TOP_BOUNDARY
+        self._control_scroll_offset: int = settings.CONTROL_SCROLL_OFFSET
+
+        # control buttons
+        self.__create_settings_buttons()
+
+        # settings effects
+        self.settings_fade_surf = pg.Surface(self._screen_size)
+        self.settings_fade_surf.set_alpha(0)
+        self.settings_dropdown_start_time: int = 0
+        self._settings_alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
+        self._settings_dest_alpha_vanish: int = settings.SETTINGS_DEST_ALPHA_VANISH
+
+    # settings section ______________________________________________________________________________
+    def __create_settings_buttons(self) -> None:  # TODO remove code duplications
+        # params: return tuple with buttons and dest pos
+        x: int = settings.CONTROL_X
+        y, y_offset = settings.CONTROL_Y, settings.CONTROL_Y_OFFSET
+        dest_pos_y = y
+        for index, key in enumerate(self.control_list):
+            key: Key
+            dest_pos_y += y_offset
+            button: Button = Button(
+                title=f'{key.title:<50} {key.key:>10}',
+                x=x,
+                y=y,
+                font_name=self.main_menu_font_name,
+                font_size=settings.CONTROL_FONT_SIZE,
+                font_color=self.main_menu_font_color,
+                position=self._control_buttons_position,
+                opacity_offset=self.button_opacity_offset,
+                alpha=self.alpha,
+                index=index,
+                properties=''
+            )
+            self.linked_list.append(button)
+            self._control_y_dest_positions.append(dest_pos_y)
+            self._control_buttons_list.append(button)
+
+    def scroll_menu(self, key: int) -> None:  # todo doc
+        match key:
+            case pg.SYSTEM_CURSOR_WAITARROW:
+                if self.linked_list.head.button.rect.y <= self._control_bottom_boundary:
+                    self.linked_list.set_y_offset(self._control_scroll_offset)
+
+            case pg.SYSTEM_CURSOR_SIZENWSE:
+                if self.linked_list.tail.button.rect.y >= self._control_top_boundary:
+                    self.linked_list.set_y_offset(-self._control_scroll_offset)
+
+    def __display_settings_menu(self, status) -> None:  # todo doc
+        self.__alpha_vanish(self._settings_alpha_vanish_duration, self.settings_dropdown_start_time, 0,
+                            self._settings_dest_alpha_vanish, self.settings_fade_surf)
+
+        self.__dropdown_menu_effect(self._control_buttons_list, self.settings_dropdown_start_time,
+                                    self.dropdown_animation_time, self._control_y_dest_positions)
+
+        for button in self._control_buttons_list:
+            button.fade_in_hover()
+
+            self._display_surface.blit(button.surf, button.rect)
+
+    # exit section __________________________________________________________________________________
+    def __create_exit_buttons(self) -> None:
+        y: int = self._exit_button_y
+        x_coords: tuple[int, int] = self._exit_button_x
+        for index, title in enumerate(self._exit_list):
+            button: Button = Button(
+                title=title,
+                x=x_coords[index],
+                y=y,
+                font_name=self.main_menu_font_name,
+                font_size=self.main_menu_font_size,
+                font_color=self.main_menu_font_color,
+                position=self._exit_button_position,
+                opacity_offset=self.button_opacity_offset,
+                alpha=self.alpha,
+                index=index,
+                properties=self._exit_list[title]
+            )
+            self.exit_buttons_list.append(button)
+
+    def exit_button_action(self, key: int) -> Status:  # todo doc
+        match key:
+            case pg.K_RETURN:
+                pg.quit()
+                exit()
+            case pg.K_ESCAPE:
+                self.dropdown_start_time = pg.time.get_ticks()
+                return Status.MAIN_MENU
+
+    def __display_exit_menu(self) -> None:  # todo dev
+        ###### del block ######
+        rect = self.img.get_rect()
+        self.img.set_alpha(128)
+        self._display_surface.blit(self.img, rect)
+        ########################
+
+        for button in self.exit_buttons_list:
+            button.fade_in_hover()
+            self._display_surface.blit(button.surf, button.rect)
 
     # supporting functions __________________________________________________________________________
     def __alpha_vanish(
             self,
-            color: str | tuple = settings.SCREENSAVER_ALPHA_COLOR,
-            reverse: bool = False,
-            offset: float = settings.SCREENSAVER_ALPHA_OFFSET
+            duration: int,
+            start_time: int,
+            start_alpha: int,
+            end_alpha: int,
+            surface: Surface,
+            color: str | tuple = settings.SCREENSAVER_SURF_COLOR,
     ) -> None:
         """
         Used to fade the screen in and out by adjusting the alpha value of a
         shading surface. If 'reverse' is set to 'True', then the screen fades
         out, otherwise it fades in. The 'offset' parameter determines how quickly
         the shading fades, and 'color' determines the color of the shading.
-        # TODO ref
+        :param duration: Animation play time.
+        :param start_time: The time at which the screen should start fading.
         :param color: A string or tuple representing the color of the shading surface.
                       Default value is 'settings.SCREENSAVER_ALPHA_COLOR'.
         :param reverse: A boolean value indicating whether the screen should fade out
                         ('True') or fade in ('False'). Default value is 'False'.
-        :param offset: A float value representing the speed at which the shading fades.
-                       Default value is 'settings.SCREENSAVER_ALPHA_OFFSET'.
+        :return:  # TODO ref doc
+        """
+        op: Callable = (operator.lt, operator.gt)[start_alpha > end_alpha]
+
+        surface.fill(color)
+        delta: int = pg.time.get_ticks() - start_time
+        erp_alpha: float = self.__lerp(start_alpha, end_alpha, delta / duration)
+        if op(erp_alpha, end_alpha):  # < or >
+            surface.set_alpha(erp_alpha)  # type: ignore
+        self._display_surface.blit(surface, (0, 0))
+
+    def __dropdown_menu_effect(
+            self,
+            buttons_list: list[Button],
+            start_time: int,
+            animation_time: int,
+            y_dest_positions: list[int],
+            shading: bool = False
+    ) -> None:
+        """
+        Play animation, when open menu.
+        self.dropdown_animation_time: The duration of the animation.
+        delta: The time elapsed since the function was called.
         :return:
         """
-        # shading
-        if not reverse:
-            self._fade_surface: Surface = pg.Surface(self._screen_size)
-            self._fade_surface.fill(color)
-            self._fade_surface.set_alpha(self.shading_alpha)  # type: ignore
+        opacity_values = (self.alpha, 0) if shading else (0, self.alpha)
+        if animation_time > 0:
+            delta: int = pg.time.get_ticks() - start_time
+            for button in buttons_list:
+                if delta < animation_time:
+                    button.rect.y = self.__lerp(
+                        button.rect.y, y_dest_positions[button.index], delta / animation_time
+                    )
+                    button.surf.set_alpha(self.__lerp(
+                        *opacity_values, delta / animation_time
+                    ))
 
-            if self.shading_alpha > 0:
-                self.shading_alpha -= offset
-                if self.shading_alpha < 0:
-                    self.shading_alpha = 0
-
-                self._fade_surface.set_alpha(self.shading_alpha)
-                self._display_surface.blit(self._fade_surface, (0, 0))
-        # fading
-        else:
-            self._fade_surface: Surface = pg.Surface(self._screen_size)
-            self._fade_surface.fill(color)
-            self._fade_surface.set_alpha(self.fading_alpha)  # type: ignore
-
-            if self.fading_alpha < 255:
-                self.fading_alpha += offset
-                if self.fading_alpha > 255:
-                    self.fading_alpha = 255
-
-                self._fade_surface.set_alpha(self.fading_alpha)
-                self._display_surface.blit(self._fade_surface, (0, 0))
-
-    @staticmethod
-    def __lerp(a: float, b: float, t: float) -> float:
-        """
-        Linear interpolation formula for smooth button movement.
-        The formula is used to smoothly change the 'x' or 'y' coordinate
-        of each button using the start and end value of the coordinates and
-        modify this value based on the time 't' elapsed since the start of
-        the move.
-        :param a: The starting value.
-        :param b: The ending value.
-        :param t: The interpolation factor, ranging from 0 to 1.
-        :return: The interpolated value between a and b based on the factor 't'.
-        """
-        return a + (b - a) * t
-
-    # TODO docs
-    @staticmethod
-    def __add_text_effect(obj: Surface):
-        item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
-        obj.set_alpha(item_alpha)
-
-    def __draw_text(self, text: str, font: Font, surface: Surface, x: int, y: int) -> tuple[Rect, Surface]:
+    def __draw_text(
+            self,
+            text: str,
+            font: pygame.freetype.Font | Font,
+            surface: Surface,
+            x: int,
+            y: int,
+            emergence: bool = False,
+            alpha_values: Optional[tuple[int, int]] = None,
+            emergence_duration: Optional[int] = None,
+            text_effect: bool = False
+    ) -> tuple[Rect, Surface]:
         """
         Draw a text on the screen.
         :param text: The text to be displayed.
@@ -258,15 +272,47 @@ class Menu:
         :param surface: The Surface object on which the text will be drawn.
         :param x: The x-coordinate of the starting point of text display.
         :param y: The y-coordinate of the starting point of text display.
+        :param emergence: If the text should be smoothly emerging.
+        :param text_effect: If the text should be animated.
         :return:
         """
         text_obj: Surface = font.render(text, True, self.main_menu_font_color)
         text_rect: Rect = text_obj.get_rect()
         text_rect.center = (x, y)
-        self.__add_text_effect(text_obj)
+        if emergence:
+            delta: int = pg.time.get_ticks() - self._screensaver_dropdown_start_time
+            alpha_offset: float | int = self.__lerp(
+                *alpha_values, delta / emergence_duration
+            )
+
+            if alpha_offset < 200:  # todo ?
+                text_obj.set_alpha(alpha_offset)
+            else:
+                if text_effect:
+                    self.__add_text_effect(text_obj)
+
         surface.blit(text_obj, text_rect)
 
-        return text_rect, text_obj  # rudiment, refactor
+        return text_rect, text_obj
+
+    @staticmethod
+    def __lerp(a: float, b: float, t: float) -> float | int:
+        """
+        Linear interpolation formula.
+        The formula is used to smoothly change the start and end values of
+        coordinates, and modify this value based on the time 't' elapsed
+        since the start of the movement.
+        :param a: The starting value.
+        :param b: The ending value.
+        :param t: The interpolation factor, ranging from 0 to 1.
+        :return: The interpolated value between a and b based on the factor 't'.
+        """
+        return a + (b - a) * t
+
+    @staticmethod
+    def __add_text_effect(obj: Surface):
+        item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
+        obj.set_alpha(item_alpha)
 
     # music setup __________________________________________________________________________________
     def toggle_music(self, forcibly_set: Optional[bool] = None) -> None:
@@ -297,42 +343,42 @@ class Menu:
         Create list of screensaver surfaces and optimize size according to screen size.
         :return: List of surfaces needed for animation.
         """
-        screensaver_data: list[Surface] = import_folder(settings.SCREENSAVER_PATH)
+        screensaver_data: list[Surface] = import_folder_img(self._screensaver_path)
 
-        screensaver_scale_data: list[Surface] = [pg.transform.scale(item, self._screen_size) for item in
-                                                 screensaver_data]
+        screensaver_scale_data: list[Surface] = [pg.transform.scale(item, (1280, 800)) for item in
+                                                 screensaver_data]  # TODO ref hard code
 
         return screensaver_scale_data
 
-    def __start_screensaver(self, state: 'State') -> None:
+    def __start_screensaver(self, status: Status) -> None:
         """
         Draws a splash screen when the application starts.
         :return:
         """
-        self._screensaver_idx: int = (self._screensaver_idx + 1) % self._count_frames
+        if not self._screensaver_flag:  # get time for lerp and start animation
+            self._screensaver_dropdown_start_time: int = pg.time.get_ticks()
+            self._screensaver_flag: bool = True
+        self._screensaver_frame_idx: int = (self._screensaver_frame_idx + 1) % self._count_frames
 
-        self._display_surface.blit(self._screensaver_data[self._screensaver_idx], (0, 0))
-        self.__alpha_vanish()
+        self._display_surface.blit(self._screensaver_data[self._screensaver_frame_idx], (0, 0))
 
-        # TODO relocate settings
-        if state == State.SCREENSAVER:
-            text = self.__draw_text(
-                'Press any key to continue...',
-                self._screensaver_font,
-                self._display_surface,
-                self._screen_size[0] // 2,
-                600
+        self.__alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_dropdown_start_time,
+                            self._screensaver_start_alpha_vanish, 0, self.screensaver_fade_surf)
+
+        if status == Status.SCREENSAVER:
+            self.__draw_text(
+
+                text=self._screensaver_text,
+                font=self._screensaver_font,
+                surface=self._display_surface,
+                x=self._screensaver_text_x,
+                y=self._screensaver_text_y,
+                text_effect=True,
+                alpha_values=self._screensaver_start_text_alpha,
+                emergence_duration=self._screensaver_alpha_text_duration,
+
+                emergence=True
             )
-
-    @deprecated
-    def __close_screensaver(self) -> None:
-        """
-        Draws a splash screen when the application closes
-        :return:
-        """
-        self._screensaver_idx: int = (self._screensaver_idx - 1) % self._count_frames
-
-        # main menu setup _______________________________________________________________________________
 
     # main menu setup _______________________________________________________________________________
     def __create_menu_buttons(self) -> None:
@@ -354,64 +400,57 @@ class Menu:
                 font_size=self.main_menu_font_size,
                 font_color=self.main_menu_font_color,
                 position=self.main_menu_position,
-                opacity_offset=self.opacity_offset,
+                opacity_offset=self.button_opacity_offset,
                 alpha=self.alpha,
-                index=index
+                index=index,
+                properties=self._main_menu_list[title]
             )
-            self._dest_positions.append(dest_pos_y)
-            self.buttons_list.append(button)
+            self._menu_y_dest_positions.append(dest_pos_y)
+            self.menu_buttons_list.append(button)
 
-    def dropdown_menu_effect(self) -> None:
+    def __display_menu_buttons(self, status: Status):
         """
-        Play animation, when open menu.
-        self.animation_time: The duration of the animation.
-        delta: The time elapsed since the function was called.
+        Displays menu buttons on the screen based on the application state.
+        If the application status is 'Status.MAIN_MENU', the method starts the menu
+        animation and displays all menu buttons. If the mouse is hovering
+        over a button, it "fades in" using the 'fade_in_hover' method,
+        otherwise it returns to its original value.
         :return:
         """
-        if self.animation_time > 0:
-            delta: int = pg.time.get_ticks() - self.start_time
-            for button in self.buttons_list:
-                if delta < self.animation_time:
-                    button.rect.y = self.__lerp(
-                        button.rect.y, self._dest_positions[button.index], delta / self.animation_time
-                    )
+        if status == status.MAIN_MENU:
+            self.__dropdown_menu_effect(
+                self.menu_buttons_list, self.dropdown_start_time, self.dropdown_animation_time,
+                self._menu_y_dest_positions
+            )
+        if status != status.MAIN_MENU:
+            self.__dropdown_menu_effect(
+                self.menu_buttons_list, self.exit_dropdown_start_time, self.dropdown_animation_time,
+                [1000] * len(self.menu_buttons_list), True
+            )  # TODO ref hard code
 
-    @deprecated
-    def __text_effects(self) -> None:
-        for i, item_surface in enumerate(self._menu_surfaces):
-            item_alpha = int(abs(math.sin(pg.time.get_ticks() / 1000 + i)) * 128 + 128)
-            item_surface.set_alpha(item_alpha)
-            self._display_surface.blit(item_surface, (100, 100 + i * 50))
+        if status != Status.SETTINGS:  # TODO fix don't work correctly
+            print('da')
+            self.__dropdown_menu_effect(self._control_buttons_list, self.settings_dropdown_start_time,
+                                        self.dropdown_animation_time, [1000] * len(self._control_buttons_list), True)
+            # for button in self._control_buttons_list:
+            #     self._display_surface.blit(button.surf, button.rect)
 
-    @deprecated
-    def __draw_menu(self, dt: float) -> None:
-        # self.__draw_menu_text()
-        # self.__text_effects()
-        pass
+        for button in self.menu_buttons_list:
+            button.fade_in_hover()
 
-    # settings section ______________________________________________________________________________
+            self._display_surface.blit(button.surf, button.rect)
 
-    # settings section end __________________________________________________________________________
-
-    def display(self, state: 'State', dt: float) -> None:
+    # run on main loop ______________________________________________________________________________
+    def run(self, status: Status) -> None:
         """
         Run menu im main loop.
-        :param state: Current state.
-        :param dt: Delta time.
+        :param status: Current status.
         :return:
         """
-        self.__start_screensaver(state)
-        # sleep for a while
-        if state == State.MAIN_MENU:  # TODO deprecated
-            self.__draw_menu(dt)
-
-    @deprecated
-    def run(self):
-        pass
-
-
-class State(Enum):
-    SCREENSAVER: str = 'SCREENSAVER'
-    MAIN_MENU: str = 'MAIN_MENU'
-    GAME: str = 'GAME'
-    GAME_PAUSE: str = 'GAME_PAUSE'
+        self.__start_screensaver(status)
+        if status != Status.SCREENSAVER:
+            self.__display_menu_buttons(status)
+        if status == Status.EXIT:
+            self.__display_exit_menu()
+        elif status == Status.SETTINGS:
+            self.__display_settings_menu(status)
