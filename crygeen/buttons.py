@@ -83,14 +83,6 @@ class Button:
         """
         exec(self.properties.get('action', 'print("no action")'))
         return self.properties.get('status')
-        # if self.title == 'Exit':
-        #     print('clicked exit')
-        #     return self.properties.get('status')
-        #     # pg.quit()
-        #     # exit()
-        #
-        # elif self.title == 'Settings':
-        #     print('clicked settings')
 
     def __get_surface(self) -> Surface:
         """
@@ -132,35 +124,12 @@ class Button:
         # mb im add keyboard also
         return bool(self.rect.collidepoint(pg.mouse.get_pos()))
 
-    def lerp(self, a, b, t):
-        """
-        Lerp the alpha value.
-        :return:
-        """
-        return
-
     def fade_in_hover(self) -> None:
         """
         Fade in the button on hover. The selected button gradually
         becomes brighter.
         :return:  # TODO upd doc
         """
-
-        # op: tuple[Callable, ...] = (  # TODO fix don't work
-        #     (operator.gt, operator.isub, operator.add),
-        #     (operator.lt, operator.iadd, operator.sub),
-        # )[self.__is_selected()]
-        # boundary: int = (self.default_alpha, 255)[self.__is_selected()]
-        # if op[0](self.alpha, boundary):  # < or >
-        #
-        #     op[1](self.alpha, self.opacity_offset)  # += or -=
-        #
-        #     self.font_color = (
-        #         255, op[2](self.font_color[1], self.opacity_offset), op[2](self.font_color[2], self.opacity_offset))
-        #     self.surf = self.__get_surface()  # TODO refactor
-        #     self.surf.set_alpha(self.alpha)
-
-
         if self.__is_selected():  # TODO ref dublicate
             op: Callable = (operator.iadd, operator.isub)[self.__is_selected()]
             if self.alpha < 255:
