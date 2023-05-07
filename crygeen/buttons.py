@@ -160,3 +160,88 @@ class Button:
                     255, self.font_color[1] + self.opacity_offset, self.font_color[2] + self.opacity_offset)
                 self.surf = self.set_surface(self.title)
                 self.surf.set_alpha(self.alpha)
+
+    def __repr__(self):
+        return f"Button('{self.title}, {self.surf}, {self.rect}')"
+
+    def __str__(self):
+        return f'{self.title}'
+
+
+class ControlButton(Button):
+    def __init__(self):
+        super().__init__()
+        # dev
+
+
+class Node:
+    def __init__(self, button, prev_node=None, next_node=None):
+        self.button = button
+        self.prev = prev_node
+        self.next = next_node
+
+    def __str__(self):
+        return f'{self.button}'
+
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+        self.tail = None
+
+    def append(self, button):
+        new_node = Node(button, self.tail, None)
+        if self.tail is not None:
+            self.tail.next = new_node
+
+        else:
+            self.head = new_node
+        self.tail = new_node
+
+    def prepend(self, button):
+        new_node = Node(button, None, self.head)
+        if self.head is not None:
+            self.head.prev = new_node
+        else:
+            self.tail = new_node
+        self.head = new_node
+
+    def insert_after_node(self, node, button):
+        if node is None:
+            return
+        new_node = Node(button, node, node.next)
+        if node.next is not None:
+            node.next.prev = new_node
+        else:
+            self.tail = new_node
+        node.next = new_node
+
+    def delete_node(self, node_to_del):
+        if node_to_del.prev is not None:
+            node_to_del.prev.next = node_to_del.next
+        else:
+            # node_to_del is head node
+            self.head = node_to_del.next
+
+        if node_to_del.next is not None:
+            node_to_del.next.prev = node_to_del.prev
+        else:
+            # node_to_del is tail node
+            self.tail = node_to_del.prev
+
+    def search_by_index(self, index):
+        current_node = self.head
+        while current_node is not None and index > 0:
+            current_node = current_node.next
+            index -= 1
+        if current_node is not None:
+            return current_node.button
+        else:
+            return None
+
+    def set_y_offset(self, y_offset):
+        current_node = self.head
+        while current_node is not None:
+            current_node.button.rect.y += y_offset
+            current_node.button.set_scroll_opacity()
+            current_node = current_node.next
