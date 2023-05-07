@@ -80,13 +80,13 @@ class Button:
         exec(self.properties.get('action', 'print("no action")'))
         return self.properties.get('status')
 
-    def __get_surface(self) -> Surface:
+    def set_surface(self, title) -> Surface:
         """
         Create text surface and set start alpha value.
         :return:
         """
         text_surf: Surface = self.font.render(
-            self.title, True, self.font_color
+            title, True, self.font_color
         )
         text_surf.set_alpha(self.default_alpha)
         return text_surf
@@ -96,16 +96,17 @@ class Button:
         Create rect depending on position.
         :return:
         """
-        if self.position == 'topleft':
-            return self.surf.get_rect(topleft=(self.x, self.y))
-        elif self.position == 'center':
-            return self.surf.get_rect(center=(self.x, self.y))
-        elif self.position == 'bottomleft':
-            return self.surf.get_rect(bottomleft=(self.x, self.y))
-        elif self.position == 'bottomright':
-            return self.surf.get_rect(bottomright=(self.x, self.y))
-        elif self.position == 'topright':
-            return self.surf.get_rect(topright=(self.x, self.y))
+        match position:
+            case 'topleft':
+                return self.surf.get_rect(topleft=(self.x, self.y))
+            case 'center':
+                return self.surf.get_rect(center=(self.x, self.y))
+            case 'bottomleft':
+                return self.surf.get_rect(bottomleft=(self.x, self.y))
+            case 'bottomright':
+                return self.surf.get_rect(bottomright=(self.x, self.y))
+            case 'topright':
+                return self.surf.get_rect(topright=(self.x, self.y))
 
     @staticmethod
     def __get_font(font_name: Path, font_size: int) -> Font:
@@ -124,7 +125,7 @@ class Button:
         """
         Fade in the button on hover. The selected button gradually
         becomes brighter.
-        :return:  # TODO upd doc
+        :return:
         """
         if self.__is_selected():  # TODO ref dublicate
             op: Callable = (operator.iadd, operator.isub)[self.__is_selected()]
@@ -132,12 +133,12 @@ class Button:
                 self.alpha += self.opacity_offset
                 self.font_color = (
                     255, self.font_color[1] - self.opacity_offset, self.font_color[2] - self.opacity_offset)
-                self.surf = self.__get_surface()
+                self.surf = self.set_surface(self.title)
                 self.surf.set_alpha(self.alpha)
         else:
             if self.alpha > self.default_alpha:
                 self.alpha -= self.opacity_offset
                 self.font_color = (
                     255, self.font_color[1] + self.opacity_offset, self.font_color[2] + self.opacity_offset)
-                self.surf = self.__get_surface()
+                self.surf = self.set_surface(self.title)
                 self.surf.set_alpha(self.alpha)
