@@ -1,29 +1,27 @@
 import operator
+from pathlib import Path
 from typing import Optional, Callable
 
 import pygame as pg
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, FilePath
 from pygame import Surface, Rect
 from pygame.font import Font
 
 from crygeen.settings import settings
-from crygeen.support import deprecated
-from crygeen.states import State, Status
 
 
 class ButtonModel(BaseModel):
     title: str
     x: int
     y: int
-    font_name: str
+    font_name: FilePath
     font_size: int
     font_color: str | tuple = settings.STD_BUTTON_COLOR,
     position: str = 'topleft'
-    alpha: int = 200
-    opacity_offset: float = 1
+    alpha: int = settings.STD_BUTTON_ALPHA
+    opacity_offset: float = settings.STD_BUTTON_OPACITY_OFFSET
     width: Optional[int] = None
     height: Optional[int] = None
-    action: Optional[Callable] = None  # TODO deprecated
     index: int
     properties: dict
 
@@ -52,14 +50,13 @@ class Button:
                     :param opacity_offset: The amount by which the alpha value changes on hover.
                     :param width: The width of the button surface (default is None).
                     :param height: The height of the button surface (default is None).
-                    :param action: The function to be called when the button is clicked.
                     :param kwargs:
                     """
         button_data = ButtonModel(**kwargs)
         self.title: str = button_data.title
         self.x: int = button_data.x
         self.y: int = button_data.y
-        self.font_name: str = button_data.font_name
+        self.font_name: Path = button_data.font_name
         self.font_size: int = button_data.font_size
         self.font_color: str | tuple = button_data.font_color
         self.font: Font = self.__get_font(self.font_name, self.font_size)
@@ -69,9 +66,8 @@ class Button:
         self.opacity_offset: float = button_data.opacity_offset
         self.width: Optional[int] = button_data.width
         self.height: Optional[int] = button_data.height
-        self.__action = button_data.action  # TODO deprecated
-        self.surf: Surface = self.__get_surface()
-        self.rect: Rect = self.__get_rect()
+        self.surf: Surface = self.set_surface(self.title)
+        self.rect: Rect = self.set_rect(self.position)
 
         self.index = kwargs['index']  # TODO doc new field
         self.properties = kwargs['properties']  # TODO doc new field
@@ -112,7 +108,7 @@ class Button:
             return self.surf.get_rect(topright=(self.x, self.y))
 
     @staticmethod
-    def __get_font(font_name: str, font_size: int) -> Font:
+    def __get_font(font_name: Path, font_size: int) -> Font:
         """Setup font."""
         return pg.font.Font(font_name, font_size)
 
