@@ -29,10 +29,10 @@ control = Control(
     Key('right', pg.K_d, 'd'),
     Key('up', pg.K_w, 'w'),
     Key('down', pg.K_s, 's'),
-    Key('pause', pg.K_ESCAPE, 'e'),
+    Key('pause', pg.K_ESCAPE, 'esc'),
     Key('inventory', pg.K_TAB, 'TAB'),
-    Key('spurt', pg.KMOD_SHIFT, 's'),
-    Key('action', pg.K_SPACE, 'a'),
+    Key('spurt', pg.KMOD_SHIFT, 'shift'),
+    Key('action', pg.K_SPACE, 'space'),
     Key('slot 1', pg.K_1, '1'),
     Key('slot 2', pg.K_2, '2'),
     Key('slot 3', pg.K_3, '3')
