@@ -175,8 +175,17 @@ class Menu:
             )
             self.exit_buttons_list.append(button)
 
-    def __display_exit_menu(self) -> None:
-        ###### del block######
+    def exit_button_action(self, key: int) -> Status:  # todo doc
+        match key:
+            case pg.K_RETURN:
+                pg.quit()
+                exit()
+            case pg.K_ESCAPE:
+                self.dropdown_start_time = pg.time.get_ticks()
+                return Status.MAIN_MENU
+
+    def __display_exit_menu(self) -> None:  # todo dev
+        ###### del block ######
         rect = self.img.get_rect()
         self.img.set_alpha(128)
         self._display_surface.blit(self.img, rect)
