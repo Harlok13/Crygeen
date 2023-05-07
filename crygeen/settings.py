@@ -1,32 +1,36 @@
-import os
+from pathlib import Path
 from typing import Tuple
 
 import pygame as pg
 from pydantic import BaseSettings
 
+from crygeen.controls import control, Control
 from crygeen.states import State, Status
 
 
 # TODO make the coordinates depend on the screen size
 # TODO make font size dependent on screen size
 class Settings(BaseSettings):
+    # general setup _________________________________________________________________________________
     SCREEN_WIDTH: int = 1280
     SCREEN_HEIGHT: int = 760
     FLAGS: int = pg.HWSURFACE | pg.DOUBLEBUF | pg.RESIZABLE
     BIT_PER_PIXEL: int = 32
     BACKGROUND_COLOR: Tuple[int, int, int] = (0, 0, 0)  # black
     STD_BUTTON_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
+    STD_BUTTON_ALPHA: int = 200
+    STD_BUTTON_OPACITY_OFFSET: int = 1
     GAME_TITLE: str = "Menu"
     GAME_ICO = ''
-    FPS: int = 40
-    BASE_PATH: str = os.getcwd()
+    MENU_FPS: int = 40
+    GAME_FPS: int = 60
+    BASE_PATH: Path = Path(__file__).parents[0].resolve()
 
-    SAVE_LOAD_BASE_PATH: str = f'{BASE_PATH}/data'
-    CONTROL_DATA_PATH: str = f'{SAVE_LOAD_BASE_PATH}/control'
+    SAVE_LOAD_BASE_PATH: Path = BASE_PATH.joinpath('data')
+    CONTROL_DATA_PATH: Path = SAVE_LOAD_BASE_PATH.joinpath('control')
     NAME_CONTROL_FILE: str = 'control_save.json'
 
-    # TODO use Path instead (Voko)
-    MAIN_MENU_LIST_old: list[str] = ['New Game', 'Load game', 'Settings', 'Exit']
+    # main menu setup _______________________________________________________________________________
     MAIN_MENU_LIST: dict = {
         'New Game': {
             'status': Status.NEW_GAME
@@ -41,27 +45,34 @@ class Settings(BaseSettings):
             'status': Status.EXIT,
         }
     }
-    MAIN_MENU_FONT: str = f'{BASE_PATH}/assets/graphics/font/AlumniSansInlineOne-italic.ttf'
+    MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
     MAIN_MENU_X: int = 150
     MAIN_MENU_Y: int = 100
     MAIN_MENU_Y_OFFSET: int = 100
-    MAIN_MENU_OPACITY_OFFSET: int = 10  # fade-in hover if button is selected
+    MAIN_MENU_BUTTON_OPACITY_OFFSET: int = 10
     MAIN_MENU_ALPHA: int = 128
+    MAIN_MENU_DROPDOWN_ANIMATION: int = 2000
     MAIN_MENU_FONT_SIZE: int = 50
     MAIN_MENU_FONT_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
 
-    SCREENSAVER_PATH: str = f'{BASE_PATH}/assets/graphics/screensaver'
-    # SCREENSAVER_PATH: str = f'{BASE_PATH}/assets/graphics/main'  # test mode
+    # screensaver setup _____________________________________________________________________________
+    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
+    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'main')  # test mode
     SCREENSAVER_ALPHA_OFFSET: float = .5
-    SCREENSAVER_FONT: str = f'{BASE_PATH}/assets/graphics/font/AlumniSansInlineOne-italic.ttf'
+    SCREENSAVER_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     SCREENSAVER_FONT_SIZE: int = 45
     SCREENSAVER_FONT_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
     SCREENSAVER_SURF_COLOR: Tuple[int, int, int] = (0, 0, 0)  # black
     SCREENSAVER_ALPHA_VANISH_DURATION: int = 10000
+    SCREENSAVER_START_ALPHA_VANISH: int = 255
+    SCREENSAVER_TEXT: str = 'Press any key to continue...'
+    SCREENSAVER_TEXT_X: int = SCREEN_WIDTH // 2
+    SCREENSAVER_TEXT_Y: int = SCREEN_HEIGHT - SCREEN_HEIGHT // 8
+    SCREENSAVER_ALPHA_TEXT_DURATION: int = 7000
+    SCREENSAVER_START_TEXT_ALPHA: Tuple[int, int] = (0, 255)
 
-    SOUND_CLICK: str = f'{BASE_PATH}/audio/click.ogg'
-
+    # exit setup ____________________________________________________________________________________
     EXIT_LIST: dict = {
         'No':
             {
@@ -76,29 +87,23 @@ class Settings(BaseSettings):
     EXIT_BUTTON_X: tuple[int, int] = (SCREEN_WIDTH // 2 - 200, SCREEN_WIDTH // 2 + 200)
     EXIT_BUTTON_POSITION: str = 'center'
 
+    # settings setup ________________________________________________________________________________
+    SETTINGS_ALPHA_VANISH_DURATION: int = 1000
+    SETTINGS_DEST_ALPHA_VANISH: int = 128
+
+    # control section
     CONTROL_TITLE: str = 'Control Setup'
     CONTROL_ALPHA: int = 228
     CONTROL_SELECT_COLOR: tuple = (255, 0, 0)  # red
     CONTROL_X: int = SCREEN_WIDTH // 2 or 2.5
-    CONTROL_Y: int = SCREEN_HEIGHT // 8
+    CONTROL_Y: int = SCREEN_HEIGHT // 10
+    CONTROL_BUTTONS_POSITION: str = 'topleft'
     CONTROL_Y_OFFSET: int = 10 + MAIN_MENU_FONT_SIZE
     CONTROL_FONT_SIZE: int = 30
-    SETTINGS_ALPHA_VANISH_DURATION: int = 1000
-
-    CONTROL: dict = {
-        'left': pg.K_a,
-        'right': pg.K_d,
-        'up': pg.K_w,
-        'down': pg.K_s,
-        'pause': pg.K_ESCAPE,
-        'interaction': pg.K_e,
-        'inventory': pg.K_TAB,
-        'spurt': pg.KMOD_SHIFT,
-        'action': pg.K_SPACE,
-        'slot 1': pg.K_1,
-        'slot 2': pg.K_2,
-        'slot 3': pg.K_3
-    }
+    CONTROL_BOTTOM_BOUNDARY: int = SCREEN_HEIGHT - SCREEN_HEIGHT // 4
+    CONTROL_TOP_BOUNDARY: int = SCREEN_HEIGHT // 4
+    CONTROL_SCROLL_OFFSET: int = 9
+    CONTROL: Control = control
 
 
 settings = Settings()
