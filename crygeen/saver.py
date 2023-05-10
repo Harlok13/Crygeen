@@ -11,8 +11,6 @@ from crygeen.settings import settings
 
 class SaveLoadManager:
     def __init__(self) -> None:
-        self.save_file = os.path.join(os.getcwd(), 'save.json')
-
         self.save_load_base_path: str = settings.SAVE_LOAD_BASE_PATH
 
         self.control_data_path: Path = settings.CONTROL_DATA_PATH
@@ -51,6 +49,12 @@ def load_save(self, save: FilePath) -> dict | list[list[str, int, str]]:
         raise exc  # TODO handle exception
     return save
 
-    def create_control_save(self):
-        pass
 
+def set_new_control_key(self, button, new_key: int) -> None:
+    data: list[list[str, int, str]] = self.load_save(self.control_data_path)
+    data[button.index][1] = new_key
+    data[button.index][2] = settings.CONTROL_ALLOWED_KEYS[new_key]
+    self.write_save(data, self.control_data_path)
+
+# def create_control_save(self):
+#     pass
