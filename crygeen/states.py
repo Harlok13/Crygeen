@@ -13,3 +13,4 @@ class Status(Enum):
     SETTINGS: str = 'SETTINGS'
     NEW_GAME: str = 'NEW_GAME'
     LOAD_GAME: str = 'LOAD_GAME'
+    SET_CONTROL: str = 'SET_CONTROL'
