@@ -1,3 +1,4 @@
+import random
 from typing import Optional
 
 import pygame as pg
@@ -106,6 +107,10 @@ class Game:
         self.status: Status = Status.SCREENSAVER
         self.state: State = State.MAIN_MENU
 
+        main_sound = pg.mixer.Sound(random.choice(audio.MAIN_MENU_SOUND))
+        main_sound.set_volume(audio.MAIN_MENU_VOLUME)
+        main_sound.play(loops=audio.MAIN_MENU_LOOPS)
+
         self.menu: Menu = Menu()
         self.menu.toggle_music(True)
         self.exit_menu: ExitMenu = ExitMenu()
@@ -140,7 +145,7 @@ class Game:
             match self.status:
                 case Status.NEW_GAME:
                     self.state = State.GAME
-            self.particle_player.display_particle_menu_effect(self.screen, 20)
+            # self.particle_player.display_particle_menu_effect(self.screen, 20)
             self.event_handler.event_loop()
 
             pg.display.update()

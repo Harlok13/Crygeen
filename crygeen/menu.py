@@ -1,6 +1,5 @@
 import math
 import operator
-import random
 from functools import wraps
 from pathlib import Path
 from typing import Optional, Callable
@@ -43,10 +42,6 @@ class Menu:
         # dropdown menu effect
         self.dropdown_animation_time = settings.MAIN_MENU_DROPDOWN_ANIMATION
         self.dropdown_start_time: int = 0
-
-        # main theme setup __________________________________________________________________________
-        self._music: bool = False
-        self._main_sound: Sound = self.__set_menu_music()
 
         # garbage ___________________________________________________________________________________
         self.img = pg.image.load('assets/setting_bg6.jpeg').convert_alpha()
@@ -169,29 +164,6 @@ class Menu:
             )
             self._menu_y_dest_positions.append(dest_pos_y)
             self.menu_buttons_list.append(button)
-
-    # music setup __________________________________________________________________________________
-    def toggle_music(self, forcibly_set: Optional[bool] = None) -> None:
-        """
-        API for toggle music.
-        If the argument is not specified, then the value is reversed,
-        otherwise the value takes the value of the argument
-        :param forcibly_set: If you need to get a specific value.
-        :return:
-        """
-        self._main_sound: bool = (not self._music, forcibly_set)[bool(forcibly_set)]
-
-    @staticmethod
-    def __set_menu_music() -> Sound:
-        """
-        General setup music.
-        Select one of the songs, set the volume and repeat cycle.
-        :return: One random music in playlist.
-        """
-        main_sound: Sound = pg.mixer.Sound(random.choice(audio.MAIN_MENU_SOUND))
-        main_sound.set_volume(audio.MAIN_MENU_VOLUME)
-        main_sound.play(loops=audio.MAIN_MENU_LOOPS)
-        return main_sound
 
     # main menu setup _______________________________________________________________________________
     def __create_menu_buttons(self) -> None:
