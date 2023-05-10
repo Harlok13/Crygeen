@@ -1,13 +1,20 @@
+import math
 import operator
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 import pygame as pg
 from pydantic import BaseModel, validator, FilePath
 from pygame import Surface, Rect
+from pygame.event import Event
 from pygame.font import Font
 
+from crygeen.controls import Key
+from crygeen.saver import SaveLoadManager
 from crygeen.settings import settings
+from crygeen.states import Status
+from crygeen.support import deprecated
+from crygeen.utils.exceptions import WrongEventType
 
 
 class ButtonModel(BaseModel):
@@ -17,13 +24,15 @@ class ButtonModel(BaseModel):
     font_name: FilePath
     font_size: int
     font_color: str | tuple = settings.STD_BUTTON_COLOR,
-    position: str = 'topleft'
+    position: str = settings.MAIN_MENU_POSITION
     alpha: int = settings.STD_BUTTON_ALPHA
     opacity_offset: float = settings.STD_BUTTON_OPACITY_OFFSET
     width: Optional[int] = None
     height: Optional[int] = None
     index: int
     properties: dict
+
+    # control_button: Optional['ControlButton'] = None
 
     @validator('position')
     def check_position(cls, v):
@@ -52,32 +61,38 @@ class Button:
                     :param height: The height of the button surface (default is None).
                     :param kwargs:
                     """
-        button_data = ButtonModel(**kwargs)
-        self.title: str = button_data.title
-        self.x: int = button_data.x
-        self.y: int = button_data.y
-        self.font_name: Path = button_data.font_name
-        self.font_size: int = button_data.font_size
-        self.font_color: str | tuple = button_data.font_color
+        # button_data = ButtonModel(**kwargs)
+        # button_data.update_forward_refs()
+        self.title: str = kwargs['title']
+        self.x: int = kwargs['x']
+        self.y: int = kwargs['y']
+        self.font_name: Path = kwargs['font_name']
+        self.font_size: int = kwargs['font_size']
+        self.font_color: str | tuple = kwargs['font_color'] or settings.STD_BUTTON_COLOR
         self.font: Font = self.__get_font(self.font_name, self.font_size)
-        self.position: str = button_data.position
-        self.alpha: int = button_data.alpha
+        self.position: str = kwargs['position'] or settings.MAIN_MENU_POSITION
+        self.alpha: int = kwargs['alpha'] or settings.STD_BUTTON_ALPHA
         self.default_alpha: int = self.alpha
-        self.opacity_offset: float = button_data.opacity_offset
-        self.width: Optional[int] = button_data.width
-        self.height: Optional[int] = button_data.height
+        self.opacity_offset: float = kwargs['opacity_offset'] or settings.STD_BUTTON_OPACITY_OFFSET
+        self.width: Optional[int] = kwargs.get('width') or None
+        self.height: Optional[int] = kwargs.get('height') or None
         self.surf: Surface = self.set_surface(self.title)
         self.rect: Rect = self.set_rect(self.position)
 
-        self.index = kwargs['index']  # TODO doc new field
-        self.properties = kwargs['properties']  # TODO doc new field
+        self.index: int = kwargs['index']  # TODO doc new field
+        self.properties: dict = kwargs['properties']  # TODO doc new field
+        self.control_button = kwargs.get('control_button') or None  # TODO doc new field
 
-    def input(self):
+    def input(self, game):
         """
         Handle input events.
         :return:
         """
+        if self.control_button:
+            # self.control_button.blinking_effect()  # todo deprecated?
+            return Status.SET_CONTROL
         exec(self.properties.get('action', 'print("no action")'))
+        exec(self.properties.get('start_time', 'print("no action")'))
         return self.properties.get('status')
 
     def set_surface(self, title) -> Surface:
@@ -106,8 +121,27 @@ class Button:
         current_pos: int = abs(half - self.rect.y)
         current_alpha: float = current_pos * y_percent / alpha_percent
 
-        if boundary_alpha <= current_alpha <= start_alpha:
-            self.surf.set_alpha(operator.sub(start_alpha, current_alpha))
+        self.surf.set_alpha(operator.sub(start_alpha, current_alpha))
+
+    @deprecated
+    def set_x(self):
+        height: int = settings.SCREEN_HEIGHT
+        half: int = height // 2
+        x_percent = .8
+        y_percent = 6
+        current_pos: int = abs(half - self.rect.y)
+        current_x = current_pos * x_percent / y_percent
+
+        start_x: int = self.x
+        start_control_x = self.control_button.x
+        if self.rect.x >= half:
+            # self.position = 'center'
+            self.rect.x = start_x - current_x
+            self.control_button.position = 'topleft'
+            self.control_button.rect.x = start_control_x - current_x
+        # else:
+        #     self.rect.x -= current_x
+        #     self.control_button.rect.x += current_x
 
     def set_rect(self, position) -> Rect:
         """
@@ -147,12 +181,20 @@ class Button:
         """
         if self.__is_selected():  # TODO ref dublicate
             op: Callable = (operator.iadd, operator.isub)[self.__is_selected()]
-            if self.alpha < 255:
+
+            if self.alpha < 255 and self.surf.get_alpha() > 100:
                 self.alpha += self.opacity_offset
                 self.font_color = (
                     255, self.font_color[1] - self.opacity_offset, self.font_color[2] - self.opacity_offset)
                 self.surf = self.set_surface(self.title)
                 self.surf.set_alpha(self.alpha)
+
+                if self.control_button:
+                    self.control_button.font_color = (
+                        255, self.font_color[1] - self.opacity_offset, self.font_color[2] - self.opacity_offset)
+                    self.control_button.surf = self.set_surface(self.control_button.title)
+                    self.control_button.surf.set_alpha(self.alpha)
+
         else:
             if self.alpha > self.default_alpha:
                 self.alpha -= self.opacity_offset
@@ -160,6 +202,16 @@ class Button:
                     255, self.font_color[1] + self.opacity_offset, self.font_color[2] + self.opacity_offset)
                 self.surf = self.set_surface(self.title)
                 self.surf.set_alpha(self.alpha)
+
+                if self.control_button:
+                    self.control_button.font_color = (
+                        255, self.font_color[1] - self.opacity_offset, self.font_color[2] - self.opacity_offset)
+                    self.control_button.surf = self.set_surface(self.control_button.title)
+                    self.control_button.surf.set_alpha(self.alpha)
+
+    def blinking_effect(self) -> None:  # TODO ref
+        item_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
+        self.surf.set_alpha(item_alpha)
 
     def __repr__(self):
         return f"Button('{self.title}, {self.surf}, {self.rect}')"
@@ -169,9 +221,34 @@ class Button:
 
 
 class ControlButton(Button):
-    def __init__(self):
-        super().__init__()
-        # dev
+    def __init__(self, constant: int, key: str, **kwargs):
+        super().__init__(**kwargs)
+        self.constant: int = constant
+        self.key: str = key
+
+        self._control_allowed_keys: dict[int, str] = settings.CONTROL_ALLOWED_KEYS
+        self._save_load_manager: SaveLoadManager = SaveLoadManager()
+        self.control_data_path: Path = settings.CONTROL_DATA_PATH
+
+        # self.surf: Surface = self.set_surface(self.key)
+
+        self.selected: bool = False
+
+    def set_new_key(self, event: Event, game):
+        if event.type != pg.KEYDOWN:
+            raise WrongEventType(event.type)
+        if event.key in self._control_allowed_keys.keys():
+
+            self.constant: int = event.key
+            self.key: str = self._control_allowed_keys[event.key]
+            self.title = self.key
+            self.surf: Surface = self.set_surface(self.key)
+            self._save_load_manager.set_new_control_key(self, event.key)
+            # self.change_color()
+            self.selected = False
+            game.status = Status.SETTINGS
+        else:
+            pass  # todo warn that the given key cannot be assigned
 
 
 class Node:
@@ -244,4 +321,9 @@ class LinkedList:
         while current_node is not None:
             current_node.button.rect.y += y_offset
             current_node.button.set_scroll_opacity()
+            # current_node.button.set_x()
+
+            current_node.button.control_button.rect.y += y_offset
+            current_node.button.control_button.set_scroll_opacity()
+
             current_node = current_node.next
