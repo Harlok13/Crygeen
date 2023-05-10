@@ -2,11 +2,13 @@ from typing import Optional
 
 import pygame as pg
 from pygame import QUIT, KEYDOWN, KEYUP, Surface, MOUSEBUTTONDOWN
+from pygame.event import Event
 from pygame.time import Clock
 
 from crygeen import audio
-from crygeen.buttons import ControlButton
+from crygeen.buttons import ControlButton, Button
 from crygeen.menu import Menu, ExitMenu, ScreensaverMenu, SettingsMenu
+from crygeen.particles import ParticlePlayer
 
 from crygeen.settings import settings
 from crygeen.states import Status, State
@@ -23,115 +25,68 @@ class EventHandler:
         pg.quit()
         exit()
 
-        ############################### new version ##################################
-
-    def __click_button(self, buttons_list) -> Status:
+    def __click_button(self, buttons_list):
         for button in buttons_list:
             if button.rect.collidepoint(pg.mouse.get_pos()):
-                return button.input(self.game)
+                if button.control_button:
+                    button.control_button.selected = True
+                    self.select_button: ControlButton = button.control_button
+                self.game.status = button.input(self.game)
 
-    def __screensaver_event_handler(self, keys: tuple[bool, ...]):
-        if True in keys:
+    def __screensaver_event_handler(self, event: Event):
+        if event.type == pg.KEYDOWN:
             self.game.status = Status.MAIN_MENU
             self.game.menu.dropdown_start_time = pg.time.get_ticks()
 
-    def __main_menu_event_handler(self, mouse_state: tuple[bool, bool, bool]):
-        if mouse_state[0]:
-            self.game.status = self.__click_button(self.game.menu.menu_buttons_list)
+    def __main_menu_event_handler(self, event: Event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.__click_button(self.game.menu.menu_buttons_list)
 
-    def __exit_menu_event_handler(self, mouse_state: tuple[bool, bool, bool], keys: tuple[bool, ...]):
-        if mouse_state[0]:
-            self.game.status = self.__click_button(self.game.exit_menu.exit_buttons_list)
-        elif keys[pg.K_ESCAPE]:
+    def __exit_menu_event_handler(self, event: Event):
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.__click_button(self.game.exit_menu.exit_buttons_list)
+
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                self.game.status = Status.MAIN_MENU
+            elif event.key == pg.K_RETURN:
+                self.__close_game()
+
+    def __settings_menu_event_handler(self, event: Event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                self.__click_button(self.game.settings_menu.control_buttons_list)
+            elif event.button == 4 or event.button == 5:
+                self.game.settings_menu.scroll_menu(event.button)
+
+        elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
             self.game.status = Status.MAIN_MENU
-        elif keys[pg.K_RETURN]:
-            self.__close_game()
 
-    def __settings_menu_event_handler(self, mouse_state: tuple[bool, bool, bool], keys: tuple[bool, ...]):
-        if mouse_state[0]:
-            self.game.status, self.select_button = self.__click_button(self.game.settings_menu.control_buttons_list)
-
-        elif keys[pg.K_ESCAPE]:
-            self.game.status = Status.MAIN_MENU
-        elif keys[pg.MOUSEWHEEL]:
-            self.game.settings_menu.scroll_menu(keys)
-
-    def __control_menu_event_handler(self, keys: tuple[bool, ...]):
-        if True in keys:
-            self.game.status = self.select_button.set_new_key(keys)
-        if keys[pg.K_ESCAPE]:
-            self.game.status = Status.SETTINGS
+    def __control_menu_event_handler(self, event):
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                self.game.status = Status.SETTINGS
+            else:
+                self.select_button.set_new_key(event, game)
+                self.select_button = None
 
     def event_loop(self):
         for event in pg.event.get():
-
-            mouse_state: tuple[bool, bool, bool] = pg.mouse.get_pressed()
-            keys: tuple[bool, ...] = pg.key.get_pressed()
-
             match event.type:
                 case pg.QUIT:
                     self.__close_game()
-
-                case pg.MOUSEBUTTONDOWN:
-                    self.game.settings_menu.scroll_menu()
 
             match self.game.status:
                 case Status.SCREENSAVER:
-                    self.__screensaver_event_handler(keys)
+                    self.__screensaver_event_handler(event)
                 case Status.MAIN_MENU:
-                    self.__main_menu_event_handler(mouse_state)
+                    self.__main_menu_event_handler(event)
                 case Status.SETTINGS:
-                    self.__settings_menu_event_handler(mouse_state, keys)
+                    self.__settings_menu_event_handler(event)
                 case Status.SET_CONTROL:
-                    self.__control_menu_event_handler(keys)
+                    self.__control_menu_event_handler(event)
                 case Status.EXIT:
-                    self.__exit_menu_event_handler(mouse_state, keys)
-
-            ######################## new version end ##############################
-
-            ######################## old version #################################
-
-            match event.type:
-                case pg.QUIT:
-                    self.__close_game()
-                case pg.KEYDOWN:
-                    if self.game.status == Status.EXIT:
-                        self.game.status = self.game.exit_menu.exit_button_action(event.key)
-                    if self.game.status == Status.SCREENSAVER:
-                        self.game.status = Status.MAIN_MENU
-                        self.game.menu.dropdown_start_time = pg.time.get_ticks()
-                    if self.game.status == Status.SETTINGS:
-                        self.game.menu.dropdown_start_time = pg.time.get_ticks()
-                    if self.game.status == Status.SET_CONTROL:
-                        self.game.status = self.select_button.set_new_key(event.key)
-
-                case pg.MOUSEBUTTONDOWN:  # TODO bag with scroll on buttons (fix)
-                    if self.game.status == Status.SETTINGS:
-                        if event.button == pg.BUTTON_WHEELUP or pg.BUTTON_WHEELDOWN:
-                            self.game.settings_menu.scroll_menu(event.button)
-
-                        for button in self.game.settings_menu.control_buttons_list:
-                            if button.rect.collidepoint(pg.mouse.get_pos()):
-                                button.control_button.selected = True
-                                self.game.status, self.select_button = button.input(self.game)
-
-                    if event.button == pg.BUTTON_LEFT:
-                        for button in self.game.menu.menu_buttons_list:
-                            if button.rect.collidepoint(pg.mouse.get_pos()):
-                                self.game.status = button.input(self.game)
-                                if self.game.status == Status.EXIT:
-                                    self.game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks()
-                                elif self.game.status == Status.SETTINGS:
-                                    self.game.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()
-
-                    if self.game.status == Status.EXIT and event.button == pg.BUTTON_LEFT:
-                        for button in self.game.exit_menu.exit_buttons_list:
-                            if button.rect.collidepoint(pg.mouse.get_pos()):
-                                self.game.status = button.input(self.game)
-                                if self.game.status == Status.MAIN_MENU:
-                                    self.game.menu.dropdown_start_time = pg.time.get_ticks()
-
-            ############################### old version end ########################################
+                    self.__exit_menu_event_handler(event)
 
 
 class Game:
@@ -157,10 +112,12 @@ class Game:
         self.settings_menu: SettingsMenu = SettingsMenu()
         self.screensaver_menu: ScreensaverMenu = ScreensaverMenu()
 
+        self.particle_player = ParticlePlayer()
+
         self.event_handler: EventHandler = handler
         self.event_handler.game = self
 
-        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, pg.MOUSEWHEEL])
+        # pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, pg.MOUSEWHEEL])
 
     def run_menu(self, status):
         self.screensaver_menu.start_screensaver(status)
@@ -183,7 +140,7 @@ class Game:
             match self.status:
                 case Status.NEW_GAME:
                     self.state = State.GAME
-
+            self.particle_player.display_particle_menu_effect(self.screen, 20)
             self.event_handler.event_loop()
 
             pg.display.update()
