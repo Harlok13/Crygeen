@@ -4,7 +4,7 @@ from typing import Tuple
 import pygame as pg
 from pydantic import BaseSettings
 
-from crygeen.controls import control, Control
+from crygeen.controls import cntrl, Control, allowed_keys
 from crygeen.states import State, Status
 
 
@@ -22,18 +22,19 @@ class Settings(BaseSettings):
     GAME_ICO = ''
     MENU_FPS: int = 40
     GAME_FPS: int = 60
-    BASE_PATH: Path = Path(__file__).parents[0].resolve()
+    BASE_PATH: Path = Path(__file__).parent.resolve()
 
     SAVE_LOAD_BASE_PATH: Path = BASE_PATH.joinpath('data')
-    CONTROL_DATA_PATH: Path = SAVE_LOAD_BASE_PATH.joinpath('control')
-    NAME_CONTROL_FILE: str = 'control_save.json'
+    CONTROL_DATA_PATH: Path = SAVE_LOAD_BASE_PATH.joinpath('control', 'control_data.json')
 
     # main menu setup _______________________________________________________________________________
     MAIN_MENU_LIST: dict = {
         'New Game': {'status': Status.NEW_GAME},
         'Load game': {'status': Status.LOAD_GAME},
-        'Settings': {'status': Status.SETTINGS},
-        'Exit': {'status': Status.EXIT}
+        'Settings': {'status': Status.SETTINGS,
+                     'start_time': 'game.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
+        'Exit': {'status': Status.EXIT,
+                 'start_time': 'game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks()'}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
@@ -62,8 +63,9 @@ class Settings(BaseSettings):
     SCREENSAVER_START_TEXT_ALPHA: Tuple[int, int] = (0, 255)
 
     # exit setup ____________________________________________________________________________________
-    EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU},
-                      'Yes': {'action': 'pg.quit(); exit()'}}
+    EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
+                              'start_time': 'game.menu.dropdown_start_time = pg.time.get_ticks()'},
+                       'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_Y: int = 500
     EXIT_BUTTON_X: tuple[int, int] = (SCREEN_WIDTH // 2 - 200, SCREEN_WIDTH // 2 + 200)
     EXIT_BUTTON_POSITION: str = 'center'
@@ -84,7 +86,9 @@ class Settings(BaseSettings):
     CONTROL_BOTTOM_BOUNDARY: int = SCREEN_HEIGHT - SCREEN_HEIGHT // 4
     CONTROL_TOP_BOUNDARY: int = SCREEN_HEIGHT // 4
     CONTROL_SCROLL_OFFSET: int = 9
-    CONTROL: Control = control
+    CONTROL_ANIMATION_DURATION: int = 1000
+    CONTROL: Control = cntrl
+    CONTROL_ALLOWED_KEYS: dict[int, str] = allowed_keys
 
 
 settings = Settings()

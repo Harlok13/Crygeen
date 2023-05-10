@@ -1,10 +1,10 @@
 from pathlib import Path
 
 MIXER_SETTINGS: tuple[int, ...] = (44100, -16, 2, 2048)
-BASE_AUDIO_PATH: Path = Path(__file__).parents[0].joinpath('audio').resolve()
+BASE_AUDIO_PATH: Path = Path(__file__).parent.joinpath('audio').resolve()
 
 MAIN_MENU_SOUND: list[str | Path] = [
-    BASE_AUDIO_PATH.joinpath('main_menu.ogg'),
+    BASE_AUDIO_PATH.joinpath('main_menu.mp3'),
     # f'{BASE_PATH}/main_menu2.ogg',
     # f'{BASE_PATH}/main_menu3.ogg'
 ]
