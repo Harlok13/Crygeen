@@ -49,7 +49,7 @@ class Menu:
         self._main_sound: Sound = self.__set_menu_music()
 
         # garbage ___________________________________________________________________________________
-        self.img = pg.image.load('setting_bg6.jpeg').convert_alpha()
+        self.img = pg.image.load('assets/setting_bg6.jpeg').convert_alpha()
 
     # supporting functions __________________________________________________________________________
     def _alpha_vanish(
