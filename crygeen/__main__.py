@@ -2,17 +2,21 @@ import random
 from typing import Optional
 
 import pygame as pg
-from pygame import QUIT, KEYDOWN, KEYUP, Surface, MOUSEBUTTONDOWN
+from pygame import QUIT, KEYDOWN, KEYUP, Surface, MOUSEBUTTONDOWN, MOUSEWHEEL
 from pygame.event import Event
 from pygame.time import Clock
 
 from crygeen import audio
 from crygeen.buttons import ControlButton, Button
+from crygeen.game_process.game_settings import gSettings
+from crygeen.game_process.level import Level
 from crygeen.menu import Menu, ExitMenu, ScreensaverMenu, SettingsMenu
 from crygeen.particles import ParticlePlayer
 
 from crygeen.settings import settings
 from crygeen.states import Status, State
+
+import pygame.gfxdraw
 
 
 class EventHandler:
@@ -50,6 +54,7 @@ class EventHandler:
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
                 self.game.status = Status.MAIN_MENU
+                self.game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks()
             elif event.key == pg.K_RETURN:
                 self.__close_game()
 
@@ -92,10 +97,9 @@ class EventHandler:
 
 class Game:
     def __init__(self, handler: EventHandler) -> None:
-        # general setup
+        # general setup _____________________________________________________________________________
         pg.mixer.pre_init(*audio.MIXER_SETTINGS)
         pg.init()
-        # self.canvas: Surface = pg.Surface((settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2))
         self.screen: Surface = pg.display.set_mode(
             (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT),
             settings.FLAGS,
@@ -104,28 +108,44 @@ class Game:
         pg.display.set_caption(settings.GAME_TITLE)
         self.clock: Clock = pg.time.Clock()
 
-        self.status: Status = Status.SCREENSAVER
-        self.state: State = State.MAIN_MENU
+        self.event_handler: EventHandler = handler
+        self.event_handler.game = self
 
-        main_sound = pg.mixer.Sound(random.choice(audio.MAIN_MENU_SOUND))
-        main_sound.set_volume(audio.MAIN_MENU_VOLUME)
-        main_sound.play(loops=audio.MAIN_MENU_LOOPS)
+        # self.state: State = State.MAIN_MENU
+        self.state: State = State.GAME
+
+        # menu setup ________________________________________________________________________________
+        self.status: Status = Status.SCREENSAVER
+
+        self.main_sound = pg.mixer.Sound(random.choice(audio.MAIN_MENU_SOUND))
+        self.main_sound.set_volume(audio.MAIN_MENU_VOLUME)
+        self.toggle_music_flag: bool = True
 
         self.menu: Menu = Menu()
-        self.menu.toggle_music(True)
         self.exit_menu: ExitMenu = ExitMenu()
         self.settings_menu: SettingsMenu = SettingsMenu()
         self.screensaver_menu: ScreensaverMenu = ScreensaverMenu()
 
         self.particle_player = ParticlePlayer()
 
-        self.event_handler: EventHandler = handler
-        self.event_handler.game = self
+        self.menu_fps: int = settings.MENU_FPS
 
-        # pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, pg.MOUSEWHEEL])
+        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEWHEEL])
+
+        # game process setup ________________________________________________________________________
+        self.game_canvas: Surface = pg.Surface(
+            (gSettings.GAME_CANVAS_WIDTH, gSettings.GAME_CANVAS_HEIGHT)
+        )
+        # self.level: Level = Level(self)
+
+    def simple_toggle_music(self):
+        if self.toggle_music_flag:
+            self.main_sound.play(loops=audio.MAIN_MENU_LOOPS)
+            self.toggle_music_flag: bool = False
 
     def run_menu(self, status):
         self.screensaver_menu.start_screensaver(status)
+        # self.simple_toggle_music()
         if status != Status.SCREENSAVER:
             self.menu.display_menu(status, self.exit_menu, self.settings_menu)
         if status == Status.EXIT:
@@ -135,21 +155,16 @@ class Game:
 
     def run(self):
         while True:
-
             match self.state:
                 case State.MAIN_MENU:
                     self.run_menu(self.status)
                 case State.GAME:
                     self.screen.fill('blue')
 
-            match self.status:
-                case Status.NEW_GAME:
-                    self.state = State.GAME
-            # self.particle_player.display_particle_menu_effect(self.screen, 20)
             self.event_handler.event_loop()
 
             pg.display.update()
-            self.clock.tick(settings.MENU_FPS)
+            self.clock.tick(self.menu_fps)
 
 
 if __name__ == "__main__":
