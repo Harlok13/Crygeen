@@ -2,20 +2,18 @@ import math
 import operator
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Callable
 
 import pygame as pg
 from pygame import Surface, Rect
 from pygame.font import Font
-from pygame.mixer import Sound
 
-from crygeen import audio
 from crygeen.buttons import Button, LinkedList, ControlButton
 from crygeen.controls import Key, Control
 from crygeen.saver import SaveLoadManager
 from crygeen.settings import settings
 from crygeen.states import Status
-from crygeen.support import import_folder_img
+from crygeen.utils.support import import_folder_img
 
 
 class Menu:
@@ -44,7 +42,7 @@ class Menu:
         self.dropdown_start_time: int = 0
 
         # garbage ___________________________________________________________________________________
-        self.img = pg.image.load('assets/setting_bg6.jpeg').convert_alpha()
+        self.img = pg.image.load('assets/graphics/settings/setting_bg6.jpeg').convert_alpha()
 
     # supporting functions __________________________________________________________________________
     def _alpha_vanish(
