@@ -1,4 +1,5 @@
 import random
+import time
 from typing import Optional
 
 import pygame as pg
@@ -10,6 +11,7 @@ from crygeen import audio
 from crygeen.buttons import ControlButton, Button
 from crygeen.game_process.game_settings import gSettings
 from crygeen.game_process.level import Level
+from crygeen.game_process.spritesheet import SpriteSheet
 from crygeen.menu import Menu, ExitMenu, ScreensaverMenu, SettingsMenu
 from crygeen.particles import ParticlePlayer
 
@@ -17,6 +19,8 @@ from crygeen.settings import settings
 from crygeen.states import Status, State
 
 import pygame.gfxdraw
+
+from crygeen.utils.debug import debug
 
 
 class EventHandler:
@@ -78,6 +82,7 @@ class EventHandler:
 
     def event_loop(self):
         for event in pg.event.get():
+            self.game.level.player.keyboard_input(event)
             match event.type:
                 case pg.QUIT:
                     self.__close_game()
@@ -105,14 +110,15 @@ class Game:
             settings.FLAGS,
             settings.BIT_PER_PIXEL
         )
+        pg.display.set_icon(pg.image.load(settings.GAME_ICO))
         pg.display.set_caption(settings.GAME_TITLE)
         self.clock: Clock = pg.time.Clock()
 
         self.event_handler: EventHandler = handler
         self.event_handler.game = self
 
-        # self.state: State = State.MAIN_MENU
-        self.state: State = State.GAME
+        self.state: State = State.MAIN_MENU
+        # self.state: State = State.GAME
 
         # menu setup ________________________________________________________________________________
         self.status: Status = Status.SCREENSAVER
@@ -136,7 +142,19 @@ class Game:
         self.game_canvas: Surface = pg.Surface(
             (gSettings.GAME_CANVAS_WIDTH, gSettings.GAME_CANVAS_HEIGHT)
         )
-        # self.level: Level = Level(self)
+
+        self.game_fps: int = gSettings.GAME_FPS
+
+        pg.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEWHEEL])
+
+        self.previous_time: float = time.time()
+
+        self.sprite_sheet: SpriteSheet = SpriteSheet(
+            gSettings.PLAYER_SPRITE_SHEET_PATH, gSettings.PLAYER_SPRITE_METADATA_PATH
+        )
+
+        self.level: Level = Level(self, self.sprite_sheet)
+
 
     def simple_toggle_music(self):
         if self.toggle_music_flag:
@@ -155,14 +173,19 @@ class Game:
 
     def run(self):
         while True:
+            dt: float = time.time() - self.previous_time
+            self.previous_time: float = time.time()
+
+            self.event_handler.event_loop()  # unfortunately it must be first
             match self.state:
                 case State.MAIN_MENU:
                     self.run_menu(self.status)
                 case State.GAME:
-                    self.screen.fill('blue')
+                    self.level.run(dt)
+                    self.screen.blit(self.level.game_canvas, (0, 0))
 
-            self.event_handler.event_loop()
 
+            # debug(self.level.player.status, 1000, 20)
             pg.display.update()
             self.clock.tick(self.menu_fps)
 
