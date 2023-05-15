@@ -14,23 +14,22 @@ class Settings(BaseSettings):
     SCREEN_HEIGHT: int = 760
     FLAGS: int = pg.HWSURFACE | pg.DOUBLEBUF | pg.RESIZABLE
     BIT_PER_PIXEL: int = 32
-    BACKGROUND_COLOR: Tuple[int, int, int] = (0, 0, 0)  # black
+    BASE_PATH: Path = Path(__file__).parent.resolve()
     STD_BUTTON_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
     STD_BUTTON_ALPHA: int = 200
     STD_BUTTON_OPACITY_OFFSET: int = 1
     GAME_TITLE: str = "Menu"
-    GAME_ICO = ''
+    GAME_ICO: Path = BASE_PATH.joinpath('assets', 'graphics', 'game_ico.png')
     MENU_FPS: int = 40
     GAME_FPS: int = 60
-    BASE_PATH: Path = Path(__file__).parent.resolve()
 
     SAVE_LOAD_BASE_PATH: Path = BASE_PATH.joinpath('data')
     CONTROL_DATA_PATH: Path = SAVE_LOAD_BASE_PATH.joinpath('control', 'control_data.json')
 
     # main menu setup _______________________________________________________________________________
     MAIN_MENU_LIST: dict = {
-        'New Game': {'status': Status.NEW_GAME},
-        'Load game': {'status': Status.LOAD_GAME},
+        'New Game': {'status': Status.NEW_GAME, 'state': 'game.state = State.GAME'},
+        'Load game': {'status': Status.MAIN_MENU},  # todo while testing
         'Settings': {'status': Status.SETTINGS,
                      'start_time': 'game.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
         'Exit': {'status': Status.EXIT,
