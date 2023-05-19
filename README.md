@@ -6,6 +6,8 @@ When a button is hovered over, it fades in and when the mouse is moved
 away, it fades out. The program is also able to play/background music
 during menu animation.
 
+<img alt="settings.png" src="screenshots%2Fsettings.png" width="500" align="center"/>
+
 ## Requirements
 
 - Python 3.11 (or 3.10)
