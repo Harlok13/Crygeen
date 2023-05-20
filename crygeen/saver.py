@@ -1,9 +1,6 @@
 import json
-import os
 from pathlib import Path
-from typing import NamedTuple
 
-import pygame as pg
 from pydantic import FilePath
 
 from crygeen.settings import settings
