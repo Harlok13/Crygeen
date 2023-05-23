@@ -1,0 +1,1 @@
+from crygeen.game_process.player_setup.player import PlayerKeyboardInput
