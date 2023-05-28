@@ -1,7 +1,7 @@
 import math
 import operator
 from pathlib import Path
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Literal
 
 import pygame as pg
 from pydantic import BaseModel, validator, FilePath
@@ -9,11 +9,10 @@ from pygame import Surface, Rect
 from pygame.event import Event
 from pygame.font import Font
 
-from crygeen.controls import Key
-from crygeen.saver import SaveLoadManager
+from crygeen.main_menu.saver import SaveLoadManager
 from crygeen.settings import settings
-from crygeen.states import Status
-from crygeen.support import deprecated
+from crygeen.main_menu.states import Status
+from crygeen.utils.support import deprecated
 from crygeen.utils.exceptions import WrongEventType
 
 
@@ -70,7 +69,7 @@ class Button:
         self.font_size: int = kwargs['font_size']
         self.font_color: str | tuple = kwargs['font_color'] or settings.STD_BUTTON_COLOR
         self.font: Font = self.__get_font(self.font_name, self.font_size)
-        self.position: str = kwargs['position'] or settings.MAIN_MENU_POSITION
+        self.position: Literal['topleft', 'topright', 'center', 'bottomleft', 'bottomright'] = kwargs['position']
         self.alpha: int = kwargs['alpha'] or settings.STD_BUTTON_ALPHA
         self.default_alpha: int = self.alpha
         self.opacity_offset: float = kwargs['opacity_offset'] or settings.STD_BUTTON_OPACITY_OFFSET
@@ -93,6 +92,7 @@ class Button:
             return Status.SET_CONTROL
         exec(self.properties.get('action', 'print("no action")'))
         exec(self.properties.get('start_time', 'print("no action")'))
+        exec(self.properties.get('state', 'print("no action")'))
         return self.properties.get('status')
 
     def set_surface(self, title) -> Surface:
