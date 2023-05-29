@@ -4,8 +4,8 @@ from typing import Tuple
 import pygame as pg
 from pydantic import BaseSettings
 
-from crygeen.controls import cntrl, Control, allowed_keys
-from crygeen.states import State, Status
+from crygeen.main_menu.controls import cntrl, Control, allowed_keys
+from crygeen.main_menu.states import Status
 
 
 class Settings(BaseSettings):
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     STD_BUTTON_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
     STD_BUTTON_ALPHA: int = 200
     STD_BUTTON_OPACITY_OFFSET: int = 1
-    GAME_TITLE: str = "Menu"
+    GAME_TITLE: str = "Crygeen"
     GAME_ICO: Path = BASE_PATH.joinpath('assets', 'graphics', 'game_ico.png')
     MENU_FPS: int = 40
     GAME_FPS: int = 60
@@ -33,7 +33,8 @@ class Settings(BaseSettings):
         'Settings': {'status': Status.SETTINGS,
                      'start_time': 'game.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
         'Exit': {'status': Status.EXIT,
-                 'start_time': 'game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks()'}
+                 'start_time': 'game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks();'
+                               'game.exit_menu.animation_start_time = pg.time.get_ticks()'}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
@@ -47,7 +48,9 @@ class Settings(BaseSettings):
     MAIN_MENU_FONT_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
 
     # screensaver setup _____________________________________________________________________________
-    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
+    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
+    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'main')
+    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'gametest')
     SCREENSAVER_ALPHA_OFFSET: float = .5
     SCREENSAVER_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     SCREENSAVER_FONT_SIZE: int = 45
@@ -63,11 +66,20 @@ class Settings(BaseSettings):
 
     # exit setup ____________________________________________________________________________________
     EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
-                              'start_time': 'game.menu.dropdown_start_time = pg.time.get_ticks()'},
+                              'start_time': 'game.menu.dropdown_start_time = pg.time.get_ticks();'
+                                            'game.exit_menu.animation_start_time = pg.time.get_ticks()'},
                        'Yes': {'action': 'pg.quit(); exit()'}}
-    EXIT_BUTTON_Y: int = 500
+    EXIT_BUTTON_START_Y: int = 1000
+    EXIT_BUTTON_DEST_Y: list[int] = [500, 500]
     EXIT_BUTTON_X: tuple[int, int] = (SCREEN_WIDTH // 2 - 200, SCREEN_WIDTH // 2 + 200)
     EXIT_BUTTON_POSITION: str = 'center'
+    EXIT_ALPHA_VANISH_DURATION: int = 1000
+    EXIT_START_ALPHA_VANISH: int = 0
+    EXIT_END_ALPHA_VANISH: int = 255
+    EXIT_TEXT_X: int = SCREEN_WIDTH // 2
+    EXIT_TEXT_Y: int = SCREEN_HEIGHT // 2
+    EXIT_TEXT: str = 'Are you sure you want to exit?'
+    EXIT_DROPDOWN_DURATION: int = 2000
 
     # settings setup ________________________________________________________________________________
     SETTINGS_ALPHA_VANISH_DURATION: int = 1000
