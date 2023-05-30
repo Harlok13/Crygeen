@@ -63,38 +63,3 @@ class Menu:
             )
             self.y_dest_positions.append(dest_pos_y)
             self.buttons_list.append(button)
-
-    # def display_menu(self, status, exit_menu, settings_menu):  # type: (Status, 'ExitMenu', 'SettingsMenu') -> None
-    #     """
-    #     Displays main_menu buttons on the screen based on the application state.
-    #     If the application status is 'Status.MAIN_MENU', the method starts the main_menu
-    #     animation and displays all main_menu buttons. If the mouse is hovering
-    #     over a button, it "fades in" using the 'fade_in_hover' method,
-    #     otherwise it returns to its original value.
-    #     :return:
-    #     """
-    #     if status == Status.MAIN_MENU:
-    #         self.dropdown_menu_effect(
-    #             self.buttons_list, self.dropdown_start_time, self.dropdown_animation_time,
-    #             self.y_dest_positions
-    #         )
-    #
-    #     if status != Status.MAIN_MENU:
-    #         self.dropdown_menu_effect(
-    #             self.buttons_list, self.dropdown_start_time, self.dropdown_animation_time,
-    #             [1000] * len(self.buttons_list), True
-    #         )  # TODO ref hard code
-    #
-    #     if self.close_exit_menu:
-    #         self.dropdown_menu_effect(
-    #             exit_menu.buttons_list, exit_menu.dropdown_start_time, exit_menu.dropdown_duration,
-    #             [1000] * len(exit_menu.buttons_list), True
-    #         )
-    #         for button in exit_menu.buttons_list:
-    #             self.display_surface.blit(button.surf, button.rect)
-    #         # close_exit_menu = False
-    #
-    #     for button in self.buttons_list:
-    #         button.fade_in_hover()
-    #
-    #         self.display_surface.blit(button.surf, button.rect)
