@@ -82,11 +82,12 @@ class Button:
         self.properties: dict = kwargs['properties']  # TODO doc new field
         self.control_button = kwargs.get('control_button') or None  # TODO doc new field
 
-    def input(self, game):
+    def input(self, main_menu, game) -> Status:  # todo tests
         """
         Handle input events.
         :return:
         """
+        from crygeen.main_menu.states import State
         if self.control_button:
             # self.control_button.blinking_effect()  # todo deprecated?
             return Status.SET_CONTROL
@@ -234,7 +235,7 @@ class ControlButton(Button):
 
         self.selected: bool = False
 
-    def set_new_key(self, event: Event, game):
+    def set_new_key(self, event: Event, main_menu) -> None:
         if event.type != pg.KEYDOWN:
             raise WrongEventType(event.type)
         if event.key in self._control_allowed_keys.keys():
@@ -246,7 +247,7 @@ class ControlButton(Button):
             self._save_load_manager.set_new_control_key(self, event.key)
             # self.change_color()
             self.selected = False
-            game.status = Status.SETTINGS
+            main_menu.status = Status.SETTINGS
         else:
             pass  # todo warn that the given key cannot be assigned
 
