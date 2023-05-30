@@ -1,0 +1,20 @@
+MIT License
+
+Copyright (c) 2023 Harlok13
+
+This license allows for the use of small code snippets for non-commercial purposes.
+
+You are permitted to:
+
+- Use the code in non-commercial projects
+- Distribute, modify and use the code
+
+Requirements:
+
+- Copyright notice must be preserved in all copies and modified versions of the code
+- The code is provided "as is" without any warranty, express or implied, including
+but not limited to warranties of merchantability, fitness for a particular purpose, and non-infringement.
+- The author is not liable for any damages arising from the use of the code in this project.
+
+This license is based on the standard requirements of open source licenses and does not restrict
+the use of the code in non-commercial projects.
