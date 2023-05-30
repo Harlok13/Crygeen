@@ -49,15 +49,6 @@ class MainMenuSetup:
     def run_menu(self) -> None:
         self.animation_player.update()
 
-        # self.screensaver_menu.start_screensaver(status)
-        # # self.__simple_toggle_music()
-        # if status != Status.SCREENSAVER:
-        #     self.menu.display_menu(status, self.exit_menu, self.settings_menu)
-        # if status == Status.EXIT:
-        #     self.exit_menu.display_exit_menu()
-        # elif status == Status.SETTINGS or self.status == Status.SET_CONTROL:
-        #     self.settings_menu.display_settings_menu(status)
-
 
 class AnimationSupport:
 
@@ -90,7 +81,7 @@ class AnimationSupport:
         delta: int = pg.time.get_ticks() - start_time
         erp_alpha: float = self._lerp(start_alpha, end_alpha, delta / duration)
         if op(erp_alpha, end_alpha):  # < or >
-            surface.set_alpha(erp_alpha)  # type: ignore
+            fade_surface.set_alpha(erp_alpha)  # type: ignore
         canvas.blit(fade_surface, (0, 0))
 
     def dropdown_menu_effect(
@@ -195,5 +186,99 @@ class MenuAnimationPlayer:
                     y=self.screensaver_menu.text_y,
                 ))
 
+    def start_menu(self) -> None:
+        if self.status == Status.MAIN_MENU:
+            self.animation.dropdown_menu_effect(
+                self.menu.buttons_list, self.menu.dropdown_start_time, self.menu.dropdown_animation_time,
+                self.menu.y_dest_positions
+            )
+
+            self.animation.dropdown_menu_effect(
+                self.exit_menu.buttons_list, self.exit_menu.dropdown_start_time, self.exit_menu.dropdown_duration,
+                [1000] * len(self.exit_menu.buttons_list), True
+            )
+            for button in self.exit_menu.buttons_list:
+                self.display_surface.blit(button.surf, button.rect)
+
+        if self.status != Status.MAIN_MENU:
+            self.animation.dropdown_menu_effect(
+                self.menu.buttons_list, self.menu.dropdown_start_time, self.menu.dropdown_animation_time,
+                [1000] * len(self.menu.buttons_list), True
+            )  # TODO ref hard code
+
+        for button in self.menu.buttons_list:
+            button.fade_in_hover()
+
+            self.display_surface.blit(button.surf, button.rect)
+
+    def start_exit_menu(self):
+        self.animation.alpha_vanish(
+            self.exit_menu.alpha_vanish_duration,
+            self.exit_menu.animation_start_time,
+            self.exit_menu.start_alpha_vanish,
+            self.exit_menu.end_alpha_vanish,
+            self.exit_menu.fade_surf,
+            self.display_surface
+        )
+
+        self.display_surface.blit(
+            *self.animation.draw_text(self.exit_menu.text, self.exit_menu.font, self.exit_menu.text_x,
+                                      self.exit_menu.text_y)
+        )
+
+        self.animation.dropdown_menu_effect(
+            self.exit_menu.buttons_list,
+            self.exit_menu.animation_start_time,
+            self.exit_menu.dropdown_duration,
+            self.exit_menu.button_dest_y,
+        )
+
+        for button in self.exit_menu.buttons_list:
+            button.fade_in_hover()
+            self.display_surface.blit(button.surf, button.rect)
+
+    def start_settings_menu(self):
+        for button in self.settings_menu.buttons_list:
+            button.set_scroll_opacity()
+            button.control_button.set_scroll_opacity()
+        self.animation.alpha_vanish(self.settings_menu.alpha_vanish_duration,
+                                    self.settings_menu.dropdown_start_time, 0,
+                                    self.settings_menu.dest_alpha_vanish,
+                                    self.settings_menu.fade_surf, self.display_surface)
+
+        self.animation.dropdown_menu_effect(self.settings_menu.buttons_list,
+                                            self.settings_menu.dropdown_start_time,
+                                            self.settings_menu.control_animation_duration,
+                                            self.settings_menu.y_dest_positions)
+
+        control_list = [button.control_button for button in self.settings_menu.buttons_list]  # TODO fix this
+
+        self.animation.dropdown_menu_effect(control_list, self.settings_menu.dropdown_start_time,
+                                            self.settings_menu.control_animation_duration,
+                                            self.settings_menu.y_dest_positions)
+
+        if self.status == Status.SET_CONTROL:
+            for button in self.settings_menu.buttons_list:
+                if button.control_button.selected:
+                    button.blinking_effect()
+                    button.control_button.blinking_effect()
+
+                self.display_surface.blit(button.surf, button.rect)
+                self.display_surface.blit(button.control_button.surf, button.control_button.rect)
+        else:
+
+            for button in self.settings_menu.buttons_list:
+                button.fade_in_hover()
+                button.control_button.fade_in_hover()
+
+                self.display_surface.blit(button.surf, button.rect)
+                self.display_surface.blit(button.control_button.surf, button.control_button.rect)
+
     def update(self) -> None:
         self.start_screensaver()
+        if self.status != Status.SCREENSAVER:
+            self.start_menu()
+        if self.status == Status.EXIT:
+            self.start_exit_menu()
+        elif self.status == Status.SETTINGS or self.status == Status.SET_CONTROL:
+            self.start_settings_menu()
