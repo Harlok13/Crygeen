@@ -31,7 +31,7 @@ class Settings(BaseSettings):
         'New Game': {'status': Status.NEW_GAME, 'state': 'game.state = State.GAME'},  # todo fix game.state
         'Load game': {'status': Status.MAIN_MENU},  # todo while testing
         'Settings': {'status': Status.SETTINGS,
-                     'start_time': 'main_menu.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
+                     'start_time': 'main_menu.settings_menu.dropdown_start_time = pg.time.get_ticks()'},
         'Exit': {'status': Status.EXIT,
                  'start_time': 'main_menu.exit_menu.dropdown_start_time = pg.time.get_ticks();'
                                'main_menu.exit_menu.animation_start_time = pg.time.get_ticks()'}
@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
                               'start_time': 'main_menu.menu.dropdown_start_time = pg.time.get_ticks();'
                                             'main_menu.exit_menu.animation_start_time = pg.time.get_ticks();'
-                                            },
+                              },
                        'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_START_Y: int = 1000
     EXIT_BUTTON_DEST_Y: list[int] = [500, 500]
