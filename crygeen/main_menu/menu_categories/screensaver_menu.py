@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Callable
 
 import pygame as pg
-from pygame import Surface
+from pygame import Surface, Rect
 from pygame.font import Font
 
 from crygeen.main_menu.menu_categories.menu import Menu
@@ -20,7 +20,7 @@ class ScreensaverMenu(Menu):
 
         # bg opacity effect
         self._screensaver_flag: bool = False
-        self.screensaver_fade_surf = pg.Surface(self._screen_size)
+        self.screensaver_fade_surf: Surface = pg.Surface(self.screen_size)
         self.screensaver_fade_surf.set_alpha(255)
         self._screensaver_dropdown_start_time: int = 0
         self._screensaver_alpha_vanish_duration: int = settings.SCREENSAVER_ALPHA_VANISH_DURATION
@@ -39,7 +39,7 @@ class ScreensaverMenu(Menu):
         self._screensaver_text: str = settings.SCREENSAVER_TEXT
         self._screensaver_font_size: int = settings.SCREENSAVER_FONT_SIZE
         self._screensaver_font: Font = pg.font.Font(settings.SCREENSAVER_FONT, self._screensaver_font_size)
-        self._screensaver_text_x: int = self._screen_size[0] // 2 or settings.SCREENSAVER_TEXT_X
+        self._screensaver_text_x: int = self.screen_size[0] // 2 or settings.SCREENSAVER_TEXT_X
         self._screensaver_text_y: int = settings.SCREENSAVER_TEXT_Y
 
     def __load_screensaver_data(self) -> list[Surface]:
@@ -54,44 +54,13 @@ class ScreensaverMenu(Menu):
 
         return screensaver_scale_data
 
-    def start_screensaver(self, status: Status) -> None:
-        """
-        Draws a splash screen when the application starts.
-        :return:
-        """
-        if not self._screensaver_flag:
-            self._screensaver_dropdown_start_time: int = pg.time.get_ticks()
-            self._screensaver_flag: bool = True
-        self._screensaver_frame_idx: int = (self._screensaver_frame_idx + 1) % self._count_frames
-
-        self._display_surface.blit(self._screensaver_data[self._screensaver_frame_idx], (0, 0))
-
-        self._alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_dropdown_start_time,
-                           self._screensaver_start_alpha_vanish, 0, self.screensaver_fade_surf)
-
-        if status == Status.SCREENSAVER:
-            decorator = self._screensaver_text_effect(
-                self._screensaver_start_text_alpha,
-                self._screensaver_alpha_text_duration,
-                self._screensaver_dropdown_start_time
-            )(self._draw_text)
-
-            text_rect, text_surf = decorator(
-                text=self._screensaver_text,
-                font=self._screensaver_font,
-                x=self._screensaver_text_x,
-                y=self._screensaver_text_y,
-            )
-
-            self._display_surface.blit(text_surf, text_rect)
-
     @staticmethod
     def _screensaver_text_effect(alpha_values: tuple[int, int], emergence_duration: int, start_time: int) -> Callable:
-        def outer_wrapper(func):
+        def outer_wrapper(func: Callable) -> Callable:
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args, **kwargs) -> tuple[Surface, Rect]:
 
-                text_rect, text_surf = func(*args, **kwargs)
+                text_surf, text_rect = func(*args, **kwargs)
 
                 delta: int = pg.time.get_ticks() - start_time
                 start_alpha, end_alpha = alpha_values
@@ -104,8 +73,38 @@ class ScreensaverMenu(Menu):
                     wave_alpha: int = int(abs(math.sin(pg.time.get_ticks() / 1000)) * 128 + 128)
                     text_surf.set_alpha(wave_alpha)
 
-                return text_rect, text_surf
+                return text_surf, text_rect
 
             return wrapper
 
         return outer_wrapper
+
+    def start_screensaver(self, status: Status) -> None:
+        """
+        Draws a splash screen when the application starts.
+        :return: None
+        """
+        if not self._screensaver_flag:
+            self._screensaver_dropdown_start_time: int = pg.time.get_ticks()
+            self._screensaver_flag: bool = True
+        self._screensaver_frame_idx: int = (self._screensaver_frame_idx + 1) % self._count_frames
+
+        self.display_surface.blit(self._screensaver_data[self._screensaver_frame_idx], (0, 0))
+
+        self.alpha_vanish(self._screensaver_alpha_vanish_duration, self._screensaver_dropdown_start_time,
+                          self._screensaver_start_alpha_vanish, 0, self.screensaver_fade_surf)
+
+        if status == Status.SCREENSAVER:
+            draw_text_decorator: Callable = self._screensaver_text_effect(
+                self._screensaver_start_text_alpha,
+                self._screensaver_alpha_text_duration,
+                self._screensaver_dropdown_start_time
+            )(self.draw_text)
+
+            self.display_surface.blit(
+                *draw_text_decorator(
+                    text=self._screensaver_text,
+                    font=self._screensaver_font,
+                    x=self._screensaver_text_x,
+                    y=self._screensaver_text_y,
+                ))
