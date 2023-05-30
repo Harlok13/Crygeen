@@ -44,6 +44,6 @@ class SaveLoadManager:
 
     def set_new_control_key(self, button, new_key: int) -> None:
         data: list[list[str, int, str]] = self.load_save(self.control_data_path)
-        data[button.index][1] = new_key
+        data[button.index][1] = new_key  # noqa
         data[button.index][2] = settings.CONTROL_ALLOWED_KEYS[new_key]
         self.write_save(data, self.control_data_path)
