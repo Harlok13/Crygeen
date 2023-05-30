@@ -23,6 +23,9 @@ class SettingsMenu:
         self.top_boundary: int = settings.CONTROL_TOP_BOUNDARY
         self.scroll_offset: int = settings.CONTROL_SCROLL_OFFSET
         self.font_size: int = settings.CONTROL_FONT_SIZE
+        self.control_x: int = settings.CONTROL_X
+        self.control_y: int = settings.CONTROL_Y
+        self.control_y_offset: int = settings.CONTROL_Y_OFFSET
 
         self.font_name: Path = settings.MAIN_MENU_FONT
         self.font_size: int = settings.MAIN_MENU_FONT_SIZE
@@ -31,12 +34,12 @@ class SettingsMenu:
         self.alpha: int = settings.MAIN_MENU_ALPHA
 
         # settings effects
-        self.settings_fade_surf: Surface = pg.Surface(self.screen_size)
-        self.settings_fade_surf.set_alpha(0)
-        self.settings_dropdown_start_time: int = 0
-        self._settings_alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
-        self._settings_dest_alpha_vanish: int = settings.SETTINGS_DEST_ALPHA_VANISH
-        self._control_animation_duration: int = settings.CONTROL_ANIMATION_DURATION
+        self.fade_surf: Surface = pg.Surface(self.screen_size)
+        self.fade_surf.set_alpha(0)
+        self.dropdown_start_time: int = 0
+        self.alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
+        self.dest_alpha_vanish: int = settings.SETTINGS_DEST_ALPHA_VANISH
+        self.control_animation_duration: int = settings.CONTROL_ANIMATION_DURATION
 
         # control buttons
         self.control_data_path: Path = settings.CONTROL_DATA_PATH
@@ -46,9 +49,9 @@ class SettingsMenu:
 
     def __create_settings_buttons(self) -> None:  # TODO remove code duplications
         # params: return tuple with buttons and dest pos
-        x: int = settings.CONTROL_X
-        y, y_offset = settings.CONTROL_Y, settings.CONTROL_Y_OFFSET  # todo ref
-        dest_pos_y = y
+        x: int = self.control_x
+        y, y_offset = self.control_y, self.control_y_offset
+        dest_pos_y: int = y
 
         for index, key in enumerate(self.control_list):
             key: Key
@@ -88,7 +91,7 @@ class SettingsMenu:
             self.y_dest_positions.append(dest_pos_y)
             self.buttons_list.append(button)
 
-    def scroll_menu(self, event_key: int) -> None:  # todo doc
+    def scroll_menu(self, event_key: int) -> None:
         if event_key == 4:
             if self.linked_list.head.button.rect.y <= self.bottom_boundary:
                 self.linked_list.set_y_offset(self.scroll_offset)
@@ -104,34 +107,3 @@ class SettingsMenu:
             self.save_load_manager.write_save(self.control_list, self.control_data_path)
             return self.save_load_manager.load_save(self.control_data_path)
 
-    # def display_settings_menu(self, status: Status) -> None:  # todo doc
-    #     for button in self.buttons_list:
-    #         button.set_scroll_opacity()
-    #         button.control_button.set_scroll_opacity()
-    #     self.alpha_vanish(self._settings_alpha_vanish_duration, self.settings_dropdown_start_time, 0,
-    #                       self._settings_dest_alpha_vanish, self.settings_fade_surf)
-    #
-    #     self.dropdown_menu_effect(self.buttons_list, self.settings_dropdown_start_time,
-    #                               self._control_animation_duration, self.y_dest_positions)
-    #
-    #     control_list = [button.control_button for button in self.buttons_list]  # TODO fix this
-    #
-    #     self.dropdown_menu_effect(control_list, self.settings_dropdown_start_time, self._control_animation_duration,
-    #                               self.y_dest_positions)
-    #
-    #     if status == Status.SET_CONTROL:
-    #         for button in self.buttons_list:
-    #             if button.control_button.selected:
-    #                 button.blinking_effect()
-    #                 button.control_button.blinking_effect()
-    #
-    #             self.display_surface.blit(button.surf, button.rect)
-    #             self.display_surface.blit(button.control_button.surf, button.control_button.rect)
-    #     else:
-    #
-    #         for button in self.buttons_list:
-    #             button.fade_in_hover()
-    #             button.control_button.fade_in_hover()
-    #
-    #             self.display_surface.blit(button.surf, button.rect)
-    #             self.display_surface.blit(button.control_button.surf, button.control_button.rect)
