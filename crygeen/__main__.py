@@ -46,7 +46,7 @@ class EventHandler:
                     self.close_game()
 
             # main_menu events
-            match self.game.main_menu.status:
+            match self.game.main_menu.animation_player.status:
                 case Status.SCREENSAVER:
                     self.menu_event_handler.screensaver_event_handler(event)
                 case Status.MAIN_MENU:
@@ -80,8 +80,8 @@ class Game:
         self.clock: Clock = pg.time.Clock()
         self.__previous_time: float = time.time()
 
-        self.state: State = State.MAIN_MENU
-        # self.state: State = State.GAME
+        # self.state: State = State.MAIN_MENU
+        self.state: State = State.GAME
 
         # main_menu setup ___________________________________________________________________________
         self.main_menu: MainMenuSetup = MainMenuSetup()
@@ -117,7 +117,7 @@ class Game:
 
             match self.state:
                 case State.MAIN_MENU:
-                    self.main_menu.run_menu(self.main_menu.status)
+                    self.main_menu.run_menu()
                 case State.GAME:
                     self.game_process.level.run(dt)
                     self.screen.blit(self.game_process.level.game_canvas, (

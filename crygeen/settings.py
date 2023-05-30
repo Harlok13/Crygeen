@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         'Settings': {'status': Status.SETTINGS,
                      'start_time': 'main_menu.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
         'Exit': {'status': Status.EXIT,
-                 'start_time': 'main_menu.exit_menu.exit_dropdown_start_time = pg.time.get_ticks();'
+                 'start_time': 'main_menu.exit_menu.dropdown_start_time = pg.time.get_ticks();'
                                'main_menu.exit_menu.animation_start_time = pg.time.get_ticks()'}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
@@ -66,9 +66,9 @@ class Settings(BaseSettings):
 
     # exit setup ____________________________________________________________________________________
     EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
-                              'start_time': 'main_menu.dropdown_start_time = pg.time.get_ticks();'
+                              'start_time': 'main_menu.menu.dropdown_start_time = pg.time.get_ticks();'
                                             'main_menu.exit_menu.animation_start_time = pg.time.get_ticks();'
-                                            'main_menu.close_exit_menu = True'},
+                                            },
                        'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_START_Y: int = 1000
     EXIT_BUTTON_DEST_Y: list[int] = [500, 500]
