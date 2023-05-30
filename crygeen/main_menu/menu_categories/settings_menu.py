@@ -3,7 +3,7 @@ from pathlib import Path
 import pygame as pg
 
 from crygeen.main_menu.buttons import LinkedList, Button, ControlButton
-from crygeen.main_menu.controls import Control, Key
+from crygeen.controls import Control, Key
 from crygeen.main_menu.menu_categories.menu import Menu
 from crygeen.main_menu.states import Status
 from crygeen.settings import settings
@@ -20,6 +20,7 @@ class SettingsMenu(Menu):
         self._control_bottom_boundary: int = settings.CONTROL_BOTTOM_BOUNDARY
         self._control_top_boundary: int = settings.CONTROL_TOP_BOUNDARY
         self._control_scroll_offset: int = settings.CONTROL_SCROLL_OFFSET
+        self._control_font_size: int = settings.CONTROL_FONT_SIZE
 
         # control buttons
         self.control_data_path: Path = settings.CONTROL_DATA_PATH
@@ -28,7 +29,7 @@ class SettingsMenu(Menu):
         self.__create_settings_buttons()
 
         # settings effects
-        self.settings_fade_surf = pg.Surface(self._screen_size)
+        self.settings_fade_surf = pg.Surface(self.screen_size)
         self.settings_fade_surf.set_alpha(0)
         self.settings_dropdown_start_time: int = 0
         self._settings_alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
@@ -59,21 +60,21 @@ class SettingsMenu(Menu):
             }
             button: Button = Button(
                 **button_kwargs,
-                control_button=ControlButton(title=f"{self.__control_data[index][2]}",
-                                             x=1000,  # todo ref
-                                             y=y,
-                                             font_name=self.main_menu_font_name,
-                                             font_size=settings.CONTROL_FONT_SIZE,
-                                             font_color=self.main_menu_font_color,
-                                             position='topright',
-                                             opacity_offset=self.button_opacity_offset,
-                                             alpha=self.alpha,
-                                             index=index,
-                                             properties="",
-                                             constant=self.__control_data[index][1],  # type: ignore
-                                             key=self.__control_data[index][2],
-
-                                             )
+                control_button=ControlButton(
+                    title=f"{self.__control_data[index][2]}",
+                    x=1000,  # todo ref
+                    y=y,
+                    font_name=self.main_menu_font_name,
+                    font_size=self._control_font_size,
+                    font_color=self.main_menu_font_color,
+                    position=self._control_buttons_position,
+                    opacity_offset=self.button_opacity_offset,
+                    alpha=self.alpha,
+                    index=index,
+                    properties="",
+                    constant=self.__control_data[index][1],  # type: ignore
+                    key=self.__control_data[index][2],
+                )
             )
             self.linked_list.append(button)
             self._control_y_dest_positions.append(dest_pos_y)
@@ -109,16 +110,16 @@ class SettingsMenu(Menu):
         for button in self.control_buttons_list:
             button.set_scroll_opacity()
             button.control_button.set_scroll_opacity()
-        self._alpha_vanish(self._settings_alpha_vanish_duration, self.settings_dropdown_start_time, 0,
-                           self._settings_dest_alpha_vanish, self.settings_fade_surf)
+        self.alpha_vanish(self._settings_alpha_vanish_duration, self.settings_dropdown_start_time, 0,
+                          self._settings_dest_alpha_vanish, self.settings_fade_surf)
 
-        self._dropdown_menu_effect(self.control_buttons_list, self.settings_dropdown_start_time,
-                                   self._control_animation_duration, self._control_y_dest_positions)
+        self.dropdown_menu_effect(self.control_buttons_list, self.settings_dropdown_start_time,
+                                  self._control_animation_duration, self._control_y_dest_positions)
 
         control_list = [button.control_button for button in self.control_buttons_list]  # TODO fix this
 
-        self._dropdown_menu_effect(control_list, self.settings_dropdown_start_time, self._control_animation_duration,
-                                   self._control_y_dest_positions)
+        self.dropdown_menu_effect(control_list, self.settings_dropdown_start_time, self._control_animation_duration,
+                                  self._control_y_dest_positions)
 
         if status == Status.SET_CONTROL:
             for button in self.control_buttons_list:
@@ -126,13 +127,13 @@ class SettingsMenu(Menu):
                     button.blinking_effect()
                     button.control_button.blinking_effect()
 
-                self._display_surface.blit(button.surf, button.rect)
-                self._display_surface.blit(button.control_button.surf, button.control_button.rect)
+                self.display_surface.blit(button.surf, button.rect)
+                self.display_surface.blit(button.control_button.surf, button.control_button.rect)
         else:
 
             for button in self.control_buttons_list:
                 button.fade_in_hover()
                 button.control_button.fade_in_hover()
 
-                self._display_surface.blit(button.surf, button.rect)
-                self._display_surface.blit(button.control_button.surf, button.control_button.rect)
+                self.display_surface.blit(button.surf, button.rect)
+                self.display_surface.blit(button.control_button.surf, button.control_button.rect)
