@@ -1,4 +1,8 @@
-# Game Menu Demo
+# Crygeen
+**If you are an artist or know how to make sounds and have a desire to
+participate in the project, then I will be glad any help!**\
+*For questions and suggestions, write to me in telegram
+@Harlok13*
 
 This program demonstrates a simple game menu using the Pygame library.
 The menu is composed of several buttons with different hover effects.
