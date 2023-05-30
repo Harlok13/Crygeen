@@ -4,7 +4,7 @@ from typing import Tuple
 import pygame as pg
 from pydantic import BaseSettings
 
-from crygeen.main_menu.controls import cntrl, Control, allowed_keys
+from crygeen.controls import cntrl, Control, allowed_keys
 from crygeen.main_menu.states import Status
 
 
@@ -26,15 +26,15 @@ class Settings(BaseSettings):
     SAVE_LOAD_BASE_PATH: Path = BASE_PATH.joinpath('data')
     CONTROL_DATA_PATH: Path = SAVE_LOAD_BASE_PATH.joinpath('control', 'control_data.json')
 
-    # main menu setup _______________________________________________________________________________
+    # main main_menu setup _______________________________________________________________________________
     MAIN_MENU_LIST: dict = {
-        'New Game': {'status': Status.NEW_GAME, 'state': 'game.state = State.GAME'},
+        'New Game': {'status': Status.NEW_GAME, 'state': 'game.state = State.GAME'},  # todo fix game.state
         'Load game': {'status': Status.MAIN_MENU},  # todo while testing
         'Settings': {'status': Status.SETTINGS,
-                     'start_time': 'game.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
+                     'start_time': 'main_menu.settings_menu.settings_dropdown_start_time = pg.time.get_ticks()'},
         'Exit': {'status': Status.EXIT,
-                 'start_time': 'game.exit_menu.exit_dropdown_start_time = pg.time.get_ticks();'
-                               'game.exit_menu.animation_start_time = pg.time.get_ticks()'}
+                 'start_time': 'main_menu.exit_menu.exit_dropdown_start_time = pg.time.get_ticks();'
+                               'main_menu.exit_menu.animation_start_time = pg.time.get_ticks()'}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
@@ -66,8 +66,9 @@ class Settings(BaseSettings):
 
     # exit setup ____________________________________________________________________________________
     EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
-                              'start_time': 'game.menu.dropdown_start_time = pg.time.get_ticks();'
-                                            'game.exit_menu.animation_start_time = pg.time.get_ticks()'},
+                              'start_time': 'main_menu.dropdown_start_time = pg.time.get_ticks();'
+                                            'main_menu.exit_menu.animation_start_time = pg.time.get_ticks();'
+                                            'main_menu.close_exit_menu = True'},
                        'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_START_Y: int = 1000
     EXIT_BUTTON_DEST_Y: list[int] = [500, 500]
@@ -102,4 +103,4 @@ class Settings(BaseSettings):
     CONTROL_ALLOWED_KEYS: dict[int, str] = allowed_keys
 
 
-settings = Settings()
+settings: Settings = Settings()
