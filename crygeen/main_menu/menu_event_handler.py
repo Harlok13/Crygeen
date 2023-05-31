@@ -23,12 +23,13 @@ class MenuEventHandler:
                 if button.control_button:
                     button.control_button.selected = True
                     self.select_button: ControlButton = button.control_button
-                self.main_menu.animation_player.status = button.input(self.main_menu, self.game)
+                self.main_menu.menu_player.status = button.input(self.main_menu, self.game)
 
     def screensaver_event_handler(self, event: Event) -> None:
         if event.type == pg.KEYDOWN:
-            self.main_menu.animation_player.status = Status.MAIN_MENU
-            self.main_menu.menu.dropdown_start_time = pg.time.get_ticks()
+            self.main_menu.menu_player.status = Status.MAIN_MENU
+            self.main_menu.menu.animation_start_time = pg.time.get_ticks()
+            self.main_menu.menu_player.play_main_menu = True
 
     def main_menu_event_handler(self, event: Event) -> None:
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
@@ -40,8 +41,10 @@ class MenuEventHandler:
 
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
-                self.main_menu.animation_player.status = Status.MAIN_MENU
-                self.main_menu.exit_menu.dropdown_start_time = pg.time.get_ticks()
+                self.main_menu.menu_player.status = Status.MAIN_MENU
+                self.main_menu.exit_menu.animation_start_time = pg.time.get_ticks()
+                self.main_menu.menu_player.play_main_menu = True
+                self.main_menu.menu_player.play_exit_menu = False
             elif event.key == pg.K_RETURN:
                 self.__close_game()
 
@@ -53,12 +56,15 @@ class MenuEventHandler:
                 self.main_menu.settings_menu.scroll_menu(event.button)
 
         elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-            self.main_menu.animation_player.status = Status.MAIN_MENU
+            self.main_menu.menu_player.status = Status.MAIN_MENU
+            self.main_menu.settings_menu.animation_start_time = pg.time.get_ticks()
+            self.main_menu.menu_player.play_settings_menu = False
+            self.main_menu.menu_player.play_main_menu = True
 
     def control_menu_event_handler(self, event: Event) -> None:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
-                self.main_menu.animation_player.status = Status.SETTINGS
+                self.main_menu.menu_player.status = Status.SETTINGS
             else:
                 self.select_button.set_new_key(event, self.main_menu)
                 self.select_button = None

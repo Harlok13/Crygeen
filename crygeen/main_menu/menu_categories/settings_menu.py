@@ -36,10 +36,10 @@ class SettingsMenu:
         # settings effects
         self.fade_surf: Surface = pg.Surface(self.screen_size)
         self.fade_surf.set_alpha(0)
-        self.dropdown_start_time: int = 0
-        self.alpha_vanish_duration = settings.SETTINGS_ALPHA_VANISH_DURATION
+        self.animation_start_time: int = 0
+        self.alpha_vanish_duration: int = settings.SETTINGS_ALPHA_VANISH_DURATION
         self.dest_alpha_vanish: int = settings.SETTINGS_DEST_ALPHA_VANISH
-        self.control_animation_duration: int = settings.CONTROL_ANIMATION_DURATION
+        self.control_dropdown_duration: int = settings.CONTROL_ANIMATION_DURATION
 
         # control buttons
         self.control_data_path: Path = settings.CONTROL_DATA_PATH
@@ -90,6 +90,10 @@ class SettingsMenu:
             self.linked_list.append(button)
             self.y_dest_positions.append(dest_pos_y)
             self.buttons_list.append(button)
+
+        for button in self.buttons_list:
+            button.surf.set_alpha(0)
+            button.control_button.surf.set_alpha(0)
 
     def scroll_menu(self, event_key: int) -> None:
         if event_key == 4:

@@ -89,11 +89,10 @@ class Button:
         """
         from crygeen.main_menu.states import State
         if self.control_button:
-            # self.control_button.blinking_effect()  # todo deprecated?
             return Status.SET_CONTROL
-        exec(self.properties.get('action', 'print("no action")'))
-        exec(self.properties.get('start_time', 'print("no action")'))
-        exec(self.properties.get('state', 'print("no action")'))
+        exec(self.properties.get('action', 'pass'))
+        exec(self.properties.get('start_time', 'pass'))
+        exec(self.properties.get('state', 'pass'))
         return self.properties.get('status')
 
     def set_surface(self, title) -> Surface:

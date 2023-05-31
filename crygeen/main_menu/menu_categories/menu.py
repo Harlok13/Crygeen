@@ -31,8 +31,8 @@ class Menu:
         self.__create_menu_buttons()
 
         # dropdown main_menu effect
-        self.dropdown_animation_time: int = settings.MAIN_MENU_DROPDOWN_ANIMATION
-        self.dropdown_start_time: int = 0
+        self.dropdown_duration: int = settings.MAIN_MENU_DROPDOWN_DURATION
+        self.animation_start_time: int = 0
 
         self.close_exit_menu: bool = False
 

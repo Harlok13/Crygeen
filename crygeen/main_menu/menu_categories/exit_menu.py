@@ -16,16 +16,15 @@ class ExitMenu:
         self.exit_list: dict[str, dict[str, Status | str]] = settings.EXIT_LIST
         self.screen_size: tuple[int, int] = pg.display.get_window_size()
 
-        # alpha vanish animation setup
+        # animation setup
         self.animation_start_time: int = 0
         self.fade_surf: Surface = pg.Surface(self.screen_size)
         self.start_alpha_vanish: int = settings.EXIT_START_ALPHA_VANISH
         self.end_alpha_vanish: int = settings.EXIT_END_ALPHA_VANISH
         self.alpha_vanish_duration: int = settings.EXIT_ALPHA_VANISH_DURATION
-        # dropdown animation setup
-        self.dropdown_start_time: int = 0
         self.dropdown_duration: int = settings.EXIT_DROPDOWN_DURATION
 
+        # font setup
         self.font_name: Path = settings.MAIN_MENU_FONT
         self.font_size: int = settings.MAIN_MENU_FONT_SIZE
         self.font_color: tuple[int, int, int] = settings.MAIN_MENU_FONT_COLOR
@@ -70,5 +69,5 @@ class ExitMenu:
                 pg.quit()
                 exit()
             case pg.K_ESCAPE:
-                self.dropdown_start_time = pg.time.get_ticks()
+                self.animation_start_time = pg.time.get_ticks()
                 return Status.MAIN_MENU

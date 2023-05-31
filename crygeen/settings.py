@@ -31,10 +31,13 @@ class Settings(BaseSettings):
         'New Game': {'status': Status.NEW_GAME, 'state': 'game.state = State.GAME'},  # todo fix game.state
         'Load game': {'status': Status.MAIN_MENU},  # todo while testing
         'Settings': {'status': Status.SETTINGS,
-                     'start_time': 'main_menu.settings_menu.dropdown_start_time = pg.time.get_ticks()'},
+                     'start_time': 'main_menu.settings_menu.animation_start_time = pg.time.get_ticks();'
+                                   'main_menu.menu_player.play_settings_menu = True;'},
         'Exit': {'status': Status.EXIT,
-                 'start_time': 'main_menu.exit_menu.dropdown_start_time = pg.time.get_ticks();'
-                               'main_menu.exit_menu.animation_start_time = pg.time.get_ticks()'}
+                 'start_time': 'main_menu.exit_menu.animation_start_time = pg.time.get_ticks();'
+                               'main_menu.menu.animation_start_time = pg.time.get_ticks();'
+                               'main_menu.menu_player.play_exit_menu = True;'
+                               'main_menu.menu_player.play_main_menu = False;'}
     }
     MAIN_MENU_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     MAIN_MENU_POSITION: str = 'topleft'
@@ -43,7 +46,7 @@ class Settings(BaseSettings):
     MAIN_MENU_Y_OFFSET: int = 100
     MAIN_MENU_BUTTON_OPACITY_OFFSET: int = 10
     MAIN_MENU_ALPHA: int = 128
-    MAIN_MENU_DROPDOWN_ANIMATION: int = 2000
+    MAIN_MENU_DROPDOWN_DURATION: int = 2000
     MAIN_MENU_FONT_SIZE: int = 50
     MAIN_MENU_FONT_COLOR: Tuple[int, int, int] = (255, 255, 255)  # white
 
@@ -66,8 +69,10 @@ class Settings(BaseSettings):
 
     # exit setup ____________________________________________________________________________________
     EXIT_LIST: dict = {'No': {'status': Status.MAIN_MENU,
-                              'start_time': 'main_menu.menu.dropdown_start_time = pg.time.get_ticks();'
+                              'start_time': 'main_menu.menu.animation_start_time = pg.time.get_ticks();'
                                             'main_menu.exit_menu.animation_start_time = pg.time.get_ticks();'
+                                            'main_menu.menu_player.play_exit_menu = False;'
+                                            'main_menu.menu_player.play_main_menu = True;'
                               },
                        'Yes': {'action': 'pg.quit(); exit()'}}
     EXIT_BUTTON_START_Y: int = 1000
