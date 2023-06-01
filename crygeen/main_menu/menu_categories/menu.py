@@ -8,27 +8,29 @@ from pygame import Surface, Rect
 from pygame.font import Font
 
 from crygeen.main_menu.buttons import Button
+from crygeen.main_menu.states import Status
 from crygeen.settings import settings
 
 
 class Menu:
     def __init__(self) -> None:
-        # general setup _____________________________________________________________________________
+        # general setup
         self.screen_size: tuple[int, int] = pg.display.get_window_size()
 
-        # main_menu setup ________________________________________________________________________________
+        # font setup
         self.font_name: Path = settings.MAIN_MENU_FONT
         self.font_size: int = settings.MAIN_MENU_FONT_SIZE
         self.font_color: tuple[int, int, int] = settings.MAIN_MENU_FONT_COLOR
-        self.position: str = settings.MAIN_MENU_POSITION
-        self._main_menu_list: dict = settings.MAIN_MENU_LIST
-        self.alpha: int = settings.MAIN_MENU_ALPHA
-        self.button_opacity_offset: float = settings.MAIN_MENU_BUTTON_OPACITY_OFFSET
 
         # main_menu buttons setup
-        self.buttons_list: list = []
-        self.y_dest_positions: list = []
+        self.button_opacity_offset: float = settings.MAIN_MENU_BUTTON_OPACITY_OFFSET
+        self.position: str = settings.MAIN_MENU_POSITION
+        self.alpha: int = settings.MAIN_MENU_ALPHA
+        self._main_menu_list: dict[str, dict[str, str | Status]] = settings.MAIN_MENU_LIST
+        self.buttons_list: list[Button] = []
+        self.y_dest_positions: list[int] = []
         self.__create_menu_buttons()
+        self.menu_close_y: list[int] = settings.MENU_CLOSE_Y * len(self.buttons_list)
 
         # dropdown main_menu effect
         self.dropdown_duration: int = settings.MAIN_MENU_DROPDOWN_DURATION
