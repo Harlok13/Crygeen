@@ -8,7 +8,7 @@ from pygame import Surface
 
 from crygeen.game_process.game_settings import gSettings
 from crygeen.game_process.grass_setup.blade_assets import BladeAssets
-from grass_manager import GrassTile
+from crygeen.game_process.grass_setup.grass_tile import GrassTile
 
 
 class GrassManager:
