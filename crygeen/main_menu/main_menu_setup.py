@@ -42,4 +42,6 @@ class MainMenuSetup:
             self.toggle_music_flag: bool = False
 
     def run_menu(self) -> None:
+        self.__simple_toggle_music()
         self.menu_player.update()
+        self.cursor.update()
