@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     STD_BUTTON_OPACITY_OFFSET: int = 1
     GAME_TITLE: str = "Crygeen"
     GAME_ICO: Path = BASE_PATH.joinpath('assets', 'graphics', 'game_ico.png')
-    MENU_CURSOR: Path = BASE_PATH.joinpath('assets', 'graphics', 'cursor', 'cursor_white.png')
+    # MENU_CURSOR: Path = BASE_PATH.joinpath('assets', 'graphics', 'cursor', 'cursor_white.png')
     MENU_FPS: int = 40
     GAME_FPS: int = 60
 
@@ -53,9 +53,7 @@ class Settings(BaseSettings):
     MENU_CLOSE_Y: list[int] = [SCREEN_HEIGHT + 100]
 
     # screensaver setup _____________________________________________________________________________
-    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
-    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'main')
-    # SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'gametest')
+    SCREENSAVER_PATH: Path = BASE_PATH.joinpath('assets', 'graphics', 'screensaver')
     SCREENSAVER_ALPHA_OFFSET: float = .5
     SCREENSAVER_FONT: Path = BASE_PATH.joinpath('assets', 'graphics', 'font', 'AlumniSansInlineOne-italic.ttf')
     SCREENSAVER_FONT_SIZE: int = 45
