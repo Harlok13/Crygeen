@@ -77,19 +77,19 @@ class Game:
 
         pg.display.set_caption(settings.GAME_TITLE)
 
+        # time setup
         self.clock: Clock = pg.time.Clock()
         self.__previous_time: float = time.time()
 
         self.state: State = State.MAIN_MENU
-        # self.state: State = State.GAME
 
-        # main_menu setup ___________________________________________________________________________
+        # main_menu setup
         self.main_menu: MainMenuSetup = MainMenuSetup()
 
-        # game process setup ________________________________________________________________________
+        # game process setup
         self.game_process: GameProcessSetup = GameProcessSetup()
 
-        # event handler setup _______________________________________________________________________
+        # event handler setup
         self.__event_handler: EventHandler = handler
         self.__event_handler.game = self
 
