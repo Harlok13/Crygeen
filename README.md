@@ -1,10 +1,16 @@
-# Game Menu Demo
+# Crygeen
+**If you are an artist or know how to make sounds and have a desire to
+participate in the project, then I will be glad any help!**\
+*For questions and suggestions, write to me in telegram
+@Harlok13*
 
 This program demonstrates a simple game menu using the Pygame library.
 The menu is composed of several buttons with different hover effects.
 When a button is hovered over, it fades in and when the mouse is moved
 away, it fades out. The program is also able to play/background music
 during menu animation.
+
+<img alt="settings.png" src="screenshots%2Fsettings.png" width="500" align="center"/>
 
 ## Requirements
 
