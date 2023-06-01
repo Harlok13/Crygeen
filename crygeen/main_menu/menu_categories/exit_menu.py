@@ -19,10 +19,14 @@ class ExitMenu:
         # animation setup
         self.animation_start_time: int = 0
         self.fade_surf: Surface = pg.Surface(self.screen_size)
-        self.start_alpha_vanish: int = settings.EXIT_START_ALPHA_VANISH
-        self.end_alpha_vanish: int = settings.EXIT_END_ALPHA_VANISH
+        self.start_alpha_vanish_opacity: int = settings.EXIT_START_ALPHA_VANISH_OPACITY
+        self.end_alpha_vanish_opacity: int = settings.EXIT_END_ALPHA_VANISH_OPACITY
         self.alpha_vanish_duration: int = settings.EXIT_ALPHA_VANISH_DURATION
         self.dropdown_duration: int = settings.EXIT_DROPDOWN_DURATION
+        # text animation
+        self.text_alpha_duration: int = settings.EXIT_TEXT_ALPHA_DURATION
+        self.text_alpha: tuple[int, int] = settings.EXIT_TEXT_ALPHA
+        self.text_end_alpha: int = settings.EXIT_TEXT_END_ALPHA
 
         # font setup
         self.font_name: Path = settings.MAIN_MENU_FONT
@@ -43,6 +47,7 @@ class ExitMenu:
         self.button_dest_y: list[int] = settings.EXIT_BUTTON_DEST_Y
         self.button_position: str = settings.EXIT_BUTTON_POSITION
         self.__create_exit_buttons()
+        self.exit_close_y: list[int] = settings.EXIT_CLOSE_Y * len(self.buttons_list)
 
     def __create_exit_buttons(self) -> None:
         y: int = self.button_start_y
