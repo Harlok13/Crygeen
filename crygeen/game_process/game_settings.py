@@ -43,5 +43,10 @@ class GameSettings(BaseSettings):
     LIGHTNING_LINE_WIDTH: int = 2
     LIGHTNING_RANGE: int = 20
 
+    NIGHT_COLOR: tuple[int, int, int] = (255, 255, 255)
+    DAY_DURATION: int = 100000
+    NIGHT_DURATION: int = 30000
+    DAWN_START: int = NIGHT_DURATION // 2
+
 
 gSettings: GameSettings = GameSettings()
