@@ -22,6 +22,7 @@ from crygeen.main_menu.menu_event_handler import MenuEventHandler
 from crygeen.main_menu.main_menu_setup import MainMenuSetup
 from crygeen.main_menu.states import Status, State
 from crygeen.settings import settings
+from crygeen.utils.debug import debug
 
 
 class EventHandler:
@@ -39,24 +40,15 @@ class EventHandler:
     def event_loop(self) -> None:
         for event in pg.event.get():
 
-            self.game_event_handler.game_process.level.player.keyboard_input.keyboard_input(event)
-
             match event.type:
                 case pg.QUIT:
                     self.close_game()
 
+            # player events
+            self.game_event_handler.game_process.level.player.keyboard_input.keyboard_input(event)
+
             # main_menu events
-            match self.game.main_menu.menu_player.status:
-                case Status.SCREENSAVER:
-                    self.menu_event_handler.screensaver_event_handler(event)
-                case Status.MAIN_MENU:
-                    self.menu_event_handler.main_menu_event_handler(event)
-                case Status.SETTINGS:
-                    self.menu_event_handler.settings_menu_event_handler(event)
-                case Status.SET_CONTROL:
-                    self.menu_event_handler.control_menu_event_handler(event)
-                case Status.EXIT:
-                    self.menu_event_handler.exit_menu_event_handler(event)
+            self.menu_event_handler.handlers.get(self.game.main_menu.menu_player.status)(event)
 
 
 class Game:
@@ -81,7 +73,8 @@ class Game:
         self.clock: Clock = pg.time.Clock()
         self.__previous_time: float = time.time()
 
-        self.state: State = State.MAIN_MENU
+        # self.state: State = State.MAIN_MENU
+        self.state: State = State.GAME
 
         # main_menu setup
         self.main_menu: MainMenuSetup = MainMenuSetup()
@@ -117,16 +110,14 @@ class Game:
 
             match self.state:
                 case State.MAIN_MENU:
-                    self.main_menu.run_menu()
+                    self.main_menu.run()
                 case State.GAME:
                     self.game_process.level.run(dt)
-                    self.screen.blit(self.game_process.level.game_canvas, (
-                        self.game_process.level.player.keyboard_input.camera_x,
-                        self.game_process.level.player.keyboard_input.camera_y
-                    ))  # todo ref
 
             self.__event_handler.event_loop()
-            # debug(self.level.player.status, 1000, 20)
+            debug(self.game_process.level.player.rect.center, 1000, 20)
+            debug(self.game_process.level.player.rect, 1000, 50)
+            # debug(self.game_process.level.obstacle_sprites., 1000, 50)
             pg.display.update()
             self.clock.tick(self.main_menu.fps or self.game_process.fps)
 
