@@ -6,12 +6,11 @@ from pygame import Surface, Vector2
 from crygeen.game_process.game_settings import gSettings, ParticleDirection, ParticleRadius
 
 
-class ParticleBlood(pg.sprite.Sprite):
+class ParticleBlood:
     """One piece of blood"""
 
     def __init__(
             self,
-            group,
             pos_x: int,
             pos_y: int,
             radius: ParticleRadius,
@@ -21,15 +20,14 @@ class ParticleBlood(pg.sprite.Sprite):
             start_time: int
     ) -> None:
 
-        super().__init__(group)
         self.pos_x: int = pos_x
         self.pos_y: int = pos_y
         self.pos_vec: Vector2 = pg.Vector2(self.pos_x, self.pos_y)
 
-        self.radius: int = radius.start_radius
+        self.radius: int = radius.start_radius  # TODO: ref title cuz its not a radius
         self.dest_radius: int = random.randint(radius.start_radius, radius.dest_radius)
 
-        self.direction_x: int = random.randint(*direction_x)
+        self.direction_x: int = random.randint(*direction_x)  # TODO: normalize vector
         self.direction_y: int = random.randint(*direction_y)
         self.dir_vec: Vector2 = pg.Vector2(self.direction_x, self.direction_y)
 
@@ -48,20 +46,22 @@ class ParticleBlood(pg.sprite.Sprite):
 
         self.lifetime: int = gSettings.BLOOD_PARTICLE_LIFETIME
 
+        self.offset_rect = self.rect
 
-class ParticlePlayer:
+
+class BloodParticlePlayer(pg.sprite.Sprite):
     def __init__(self, group) -> None:
+        super().__init__(group)
         self.particles: list[ParticleBlood] = []
         self.particles_amount: int = gSettings.BLOOD_PARTICLE_AMOUNT
 
-        self.group = group
 
     @staticmethod
     def __lerp(a, b, dt) -> float:  # noqa
         return a + (b - a) * dt
 
-    def emit(self) -> None:
-        self.delete_particles()
+    def emit(self, canvas: Surface, player) -> None:
+        self.__delete_particles()
 
         if self.particles:
 
@@ -82,19 +82,24 @@ class ParticlePlayer:
                         particle.radius, particle.dest_radius, delta / particle.duration
                     )
 
-                pg.draw.circle(
-                    particle.image, particle.color, (particle.pos_x, particle.pos_y), int(particle.radius)
-                )
                 particle.rect = particle.image.get_rect(center=(particle.pos_x, particle.pos_y))
+                # pg.draw.circle(
+                #     canvas, particle.color, (particle.rect.centerx - player.rect.centerx, particle.rect.centery - player.rect.centery), int(particle.radius)
+                # )
+
+                pg.draw.ellipse(
+                    canvas, particle.color,
+                    pg.Rect(particle.rect.centerx - player.rect.centerx, particle.rect.centery - player.rect.centery,
+                            particle.radius, particle.radius // 2),
+                )
 
             # change particle lifetime
             for particle in self.particles:
                 particle.lifetime -= random.random() * gSettings.PARTICLE_LIFETIME_COEFFICIENT
 
-    def add_particles(self) -> None:
+    def add_particles(self) -> None:  # TODO: use as API
 
         particle_circle: ParticleBlood = ParticleBlood(
-            group=self.group,
             pos_x=pg.mouse.get_pos()[0],
             pos_y=pg.mouse.get_pos()[1],
             radius=gSettings.BLOOD_PARTICLE_RADIUS,
@@ -103,18 +108,16 @@ class ParticlePlayer:
             duration=gSettings.BLOOD_PARTICLE_DURATION,
             start_time=pg.time.get_ticks()
         )
-        self.particles: list[ParticleBlood] = [
-            particle_circle for _ in range(self.particles_amount)
-        ]
+        # self.particles: list[ParticleBlood] = [
+        #     particle_circle for _ in range(self.particles_amount)
+        # ]
         self.particles.append(particle_circle)
 
-    def delete_particles(self) -> None:
+    def __delete_particles(self) -> None:
         particle_copy: list[ParticleBlood] = [particle for particle in self.particles if particle.lifetime > 0]
         self.particles: list[ParticleBlood] = particle_copy
 
-    def update(self, *args, **kwargs) -> None:
-        print(kwargs)
-        if kwargs['collide']:
-            self.add_particles()
-            self.emit()
+    def update(self, canvas: Surface, player,  *args, **kwargs) -> None:
+        self.add_particles()
+        self.emit(canvas, player)
 
