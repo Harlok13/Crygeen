@@ -20,7 +20,7 @@ class BladeAssets:
 
         # load in blade images
         for blade in sorted(os.listdir(path)):
-            img: Surface = pg.image.load(path + '/' + blade).convert()
+            img: Surface = pg.image.load(path.joinpath(f'{blade}')).convert()
             img.set_colorkey((0, 0, 0))
             self.blades.append(img)
 
