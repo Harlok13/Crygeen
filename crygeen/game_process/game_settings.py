@@ -21,8 +21,8 @@ class GameSettings(BaseSettings):
     PLAYER_SPURT_DURATION: int = 300
     PLAYER_ATTACK_CD: int = 700
 
-    # GRASS_PATH: Path = settings.BASE_PATH.joinpath('assets', 'graphics', 'grass')
-    GRASS_PATH: str = '/Users/harlok/PycharmProjects/Crygeen/crygeen/assets/graphics/grass'  # TODO: ref hardcode
+    GRASS_PATH: Path = settings.BASE_PATH.joinpath('assets', 'graphics', 'grass')
+    # GRASS_PATH: str = '/Users/harlok/PycharmProjects/Crygeen/crygeen/assets/graphics/grass'  # TODO: ref hardcode
     GRASS_TILE_SIZE: int = 10
     GRASS_SHADE_AMOUNT: int = 100
     GRASS_STIFFNESS: int = 360
