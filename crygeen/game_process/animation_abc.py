@@ -14,18 +14,18 @@ class AnimationAbc(ABC):
         self._frame_index: int = 0
         self._animation_speed: float = animation_speed
 
-    def entity_play_animation(cls, dt: float, status: str, entity: Any, *args, **kwargs) -> None:
-        cls._frame_index += cls._animation_speed * dt
+    def entity_play_animation(self, dt: float, status: str, entity: Any, *args, **kwargs) -> None:
+        self._frame_index += self._animation_speed * dt
 
-        if cls._frame_index >= entity.sprite_sheet.data['frames'][f'{status}0.png']['animation_len']:
-            cls._frame_index: int = 0
-        sprite: Surface = entity.sprite_sheet.parse_sprite(f'{status}{int(cls._frame_index)}.png')
+        if self._frame_index >= entity.sprite_sheet.data['frames'][f'{status}0.png']['animation_len']:
+            self._frame_index: int = 0
+        sprite: Surface = entity.sprite_sheet.parse_sprite(f'{status}{int(self._frame_index)}.png')
 
         if entity.sprite_sheet.data['frames'][f'{status}0.png'].get('reverse', False):
             sprite: Surface = pg.transform.flip(sprite, True, False)
 
         entity.image = sprite
-        entity.rect = entity.image.get_rect(center=entity.hitbox.center)
+        entity.rect = entity.image.get_rect(center=entity.rect.center)  # TODO: its must be hitbox
 
     def magic_play_animation(self, dt: float, magic_entity: Any) -> None:
         self._frame_index += self._animation_speed * dt
