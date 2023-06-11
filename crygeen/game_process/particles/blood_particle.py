@@ -34,7 +34,9 @@ class ParticleBlood:
         self.dir_vec: Vector2 = pg.Vector2(self.direction_x, self.direction_y)
 
         # normalize vector to circle
-        self.dir_vec.scale_to_length(min(self.dir_vec.length(), direction_x.positive))  # TODO: or make ellipse?
+        if self.dir_vec.length() == 0:
+            self.dir_vec.x = 1
+        self.dir_vec.scale_to_length(min(self.dir_vec.length(), direction_x.positive))  # TODO: or make ellipse? ValueError: Cannot scale a vector with zero length
 
         self.dest_vec: Vector2 = pg.Vector2(self.pos_vec + self.dir_vec)
 
@@ -68,7 +70,7 @@ class BloodParticlePlayer:
         return a + (b - a) * dt
 
     def emit(self, player) -> None:
-        self.__delete_particles()
+        self.__delete_particles(player)
 
         if self.particles:
 
@@ -114,7 +116,7 @@ class BloodParticlePlayer:
         # ]
         self.particles.append(particle_circle)
 
-    def __delete_particles(self) -> None:
+    def __delete_particles(self, player) -> None:
         particle_copy: list[ParticleBlood] = [particle for particle in self.particles if particle.lifetime > 0]
         self.particles: list[ParticleBlood] = particle_copy
 
